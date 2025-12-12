@@ -1,0 +1,10 @@
+To reactivate your virtual environment (venv), do the following from your project folder:
+
+1. Navigate to your project folder
+cd "/Users/cameronlau/Documents/Projects/Game Project"
+
+2. Activate the venv
+
+On macOS / Linux:
+
+source venv/bin/activate
