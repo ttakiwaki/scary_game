@@ -21,13 +21,17 @@ class Monster(arcade.Sprite):
         
         self.center_x = center_x
         self.center_y = center_y
-        self.current_point = [center_x, center_y]
         
         self.change_x = change_x
         self.change_y = change_y
 
         self.stationary_shot = False
-        self.walking = False
+        self.target_exists = False
+        self.monster_speed = 5
+        self.target_store = []
+
+        self.delay = 0
+        self.delay_max = 0
         
     def look_for_point(self):
         x = random.randrange(SCREEN_WIDTH)
@@ -35,31 +39,42 @@ class Monster(arcade.Sprite):
         return x, y
     
     def update(self):
-        """ Code to control the ball's movement"""
-        # Move the ball
-        # self.center_y += self.change_y / 5
-        # self.center_x += self.change_x / 5
-        
-        # #See if the ball hi the edge of the screen, If so change direction
-        # if self.center_x > SCREEN_WIDTH:
-        #     self.change_x *= -1
-            
-        # elif self.center_x < self.scale:
-        #     self.change_x *= -1            
-            
-        # elif self.center_y > SCREEN_HEIGHT:
-        #     self.change_y *= -1    
-    
-        # elif self.center_y < self.scale:
-        #     self.change_y *= -1
-
         """Minecraft mob type movement. Find random [x,y] value, and once at the position, generate a new point to move to."""
 
-        if self.stationary_shot == False and self.walking == False:
-            selected_point = self.look_for_point()
-            math.dist(self.current_point, selected_point)
-            
+        if self.stationary_shot == False and self.target_exists == False:
+            if self.delay > 0:
+                self.delay -= 1
+                return
 
+            target_point = self.look_for_point()
+            self.target_store = target_point
+            self.target_exists = True
+
+        if self.target_exists:
+            dist = math.dist([self.center_x, self.center_y], self.target_store)
+
+            if dist <= 10:
+                self.change_x = 0
+                self.change_y = 0
+                self.target_exists = False
+                self.delay_max = random.randint(30, 120)
+                self.delay = self.delay_max
+                return
+            
+            else:
+                #Distance comes from subtraction -> (+): Positive Distance, (-): Negative Distance. Always (Target - Current)
+                direction_x = (self.target_store[0] - self.center_x)
+                direction_y = (self.target_store[1] - self.center_y)
+
+                direction_x /= dist
+                direction_y /= dist
+
+                self.change_x = direction_x * self.monster_speed
+                self.change_y = direction_y * self.monster_speed
+
+                self.center_x += self.change_x
+                self.center_y += self.change_y
+                    
 
     def calc_radius(self, coor):
         monster_distance = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
