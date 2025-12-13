@@ -1,5 +1,4 @@
-"""Sprite Sample Program"""
-
+"""Scary Game"""
 
 import random
 import arcade
@@ -9,8 +8,9 @@ from arcade.experimental.lights import Light, LightLayer
 
 
 # --- Constants ---
-MOVE_SPEED = 10
 CAMERA_SPEED = 0.1
+MONSTER_RADIUS = 400
+MOVE_SPEED = 3.5
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
@@ -50,7 +50,7 @@ class Monster(arcade.Sprite):
             self.target_store = target_point
             self.target_exists = True
 
-        if self.target_exists:
+        if self.target_exists == True:
             dist = math.dist([self.center_x, self.center_y], self.target_store)
 
             if dist <= 10:
@@ -60,7 +60,6 @@ class Monster(arcade.Sprite):
                 self.delay_max = random.randint(30, 120)
                 self.delay = self.delay_max
                 return
-            
             else:
                 #Distance comes from subtraction -> (+): Positive Distance, (-): Negative Distance. Always (Target - Current)
                 direction_x = (self.target_store[0] - self.center_x)
@@ -75,12 +74,11 @@ class Monster(arcade.Sprite):
                 self.center_x += self.change_x
                 self.center_y += self.change_y
                     
-
     def calc_radius(self, coor):
         monster_distance = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
-        global enable_tracking
+        global enable_tracking, MONSTER_RADIUS
         #print(monster_distance)
-        if monster_distance  <= 400:
+        if monster_distance  <= MONSTER_RADIUS:
             enable_tracking = True
         else:
             enable_tracking = False
@@ -116,9 +114,6 @@ class MyGame(arcade.Window):
         #Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Scary Game", fullscreen=False, resizable=True, update_rate=1/60)
         
-        # Create the cameras. One for the GUI, one for the sprites.
-        # We scroll the 'sprite world' but not the GUI.    
-        
         self.set_location(100,100)
         
         # Variables that will hold sprite lists.
@@ -133,6 +128,7 @@ class MyGame(arcade.Window):
         
         #Set up environment info
         self.level = 1
+        self.sanity_color = arcade.color.GREEN
         
         #True / False
         self.inventory_open = False
@@ -140,6 +136,8 @@ class MyGame(arcade.Window):
         self.gun_on = False
         self.left_pressed = False
         self.right_pressed = False
+        self.debug = False
+        self.show_sanity = True
         
         #Integers
         self.score = 0
@@ -147,7 +145,9 @@ class MyGame(arcade.Window):
         self.tree_count = 10
         self.generator_count = 3
         self.sanity_initial = 100
+        self.sanity = 0
         self.cam_zoom = .5
+        self.rate_of_consumption = 0
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -158,6 +158,10 @@ class MyGame(arcade.Window):
         self.player_light = Light(0, 0, 200, arcade.color.WHITE, mode="soft")
         self.light_layer.add(self.player_light)
         arcade.set_background_color(arcade.color.AMAZON)
+
+        #Call Rate of Consumption function
+        self.sanity_decrease()
+        self.sanity = self.sanity_initial
 
 
     def close(self):
@@ -214,10 +218,10 @@ class MyGame(arcade.Window):
 
     def sanity_decrease(self):
         decrease_factor = 1.3
-        rate_of_consumption = 1 * decrease_factor**(self.level-1)
-        return rate_of_consumption
-
+        self.rate_of_consumption = 1 * decrease_factor**(self.level-1)
+        return self.rate_of_consumption
     
+
     def on_uidraw(self):     
         #Draw Inventory
         if self.inventory_open == True:
@@ -232,9 +236,30 @@ class MyGame(arcade.Window):
             arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
             arcade.draw_text(f"Sanity: {self.sanity_initial}", 10, 90, arcade.color.WHITE, 24)
 
-        #Draw Sanity Meter
+        #Draw Debug menu
+        if self.debug == True:
+            self.show_sanity = False
+            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
+            arcade.draw_text(f"Monster Radius: {MONSTER_RADIUS}", 10, SCREEN_HEIGHT-80, arcade.color.WHITE, 24)
+            arcade.draw_text(f"Move Speed: {MOVE_SPEED}", 10, SCREEN_HEIGHT-110, arcade.color.WHITE, 24)
+        
+        #Draw Sanity
+        if self.show_sanity == True:
+            #Draw Sanity Meter Outline
+            meter_width = SCREEN_WIDTH / 4
+            meter_height = SCREEN_HEIGHT / 12
+            margin = 10
+            center_x = SCREEN_WIDTH - meter_width / 2 - margin
+            center_y = meter_height / 2 + margin
+            arcade.draw_rectangle_filled(center_x, center_y, meter_width, meter_height, arcade.color.BLACK)
+            arcade.draw_rectangle_outline(center_x,center_y,meter_width, meter_height, arcade.color.WHITE, border_width=3)
 
-               
+            #Draw Sanity Meter
+            sanity_ratio = self.sanity / self.sanity_initial
+            fill_width = meter_width * sanity_ratio
+            arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
+            arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
+
     def on_draw(self):
         arcade.start_render()
         self.camera_sprites.use()
@@ -271,15 +296,24 @@ class MyGame(arcade.Window):
         #Call update on all sprites (Sprites dont do much in this example)
         self.player_list.update()
         self.player_list.update_animation()
-        global player_pos
+        global player_pos, MONSTER_RADIUS, MOVE_SPEED
         player_pos = self.player_sprite.position
+    
 
-        #Sanity Decrease
-        self.sanity_decrease()
+        #Sanity Decrease and Effects
+        self.sanity -= 0.05 * (delta_time/2)
+        if self.sanity <= 0:
+            MONSTER_RADIUS = 1000
+        elif self.sanity <= 20:
+            MOVE_SPEED = 1
+        elif self.sanity <= 30: #Distorted Vision
+            self.sanity_color = arcade.color.RED
+        elif self.sanity <= 60: #Monster Radius Increase & Audio Hallucinations
+            self.sanity_color = arcade.color.YELLOW
+        elif self.sanity <= 100: #Hallucinations 
+            self.sanity_color = arcade.color.GREEN
 
-        self.bullet_list.update()
-
-
+        #Light Update
         self.player_light.position = (self.player_sprite.center_x,
                               self.player_sprite.center_y)
         
@@ -296,11 +330,12 @@ class MyGame(arcade.Window):
         elif 20 > player_pos[1]:
             self.player_sprite.change_y = 0
             
-        #gun Update
+        #Gun Update
         if self.left_pressed:
             self.angle -= 0.1
         elif self.right_pressed:
-            self.angle += 0.1        
+            self.angle += 0.1      
+        self.bullet_list.update()  
 
         #Monster Update
         for monster in self.monster_list:
@@ -308,7 +343,7 @@ class MyGame(arcade.Window):
 
         self.monster_list.update()
         monster_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.monster_list)
-        for monster_hit in monster_hit_list:
+        for i in monster_hit_list:
             self.score+=1
 
         #Generator Update
@@ -332,6 +367,8 @@ class MyGame(arcade.Window):
 
     def commands(self):
         command = input(": ")
+
+        #Item Commands
         if command == "give_health1":
             self.inventory_dict["health_1"] += 1
         elif command == "give_health2":
@@ -343,7 +380,17 @@ class MyGame(arcade.Window):
         elif command == "give_speed1":
             self.inventory_dict["speed_1"] += 1
         elif command == "give_speed2":
-            self.inventory_dict["speed_2"] += 1          
+            self.inventory_dict["speed_2"] += 1
+        
+        #Variable Commands
+        elif command == "sanity":
+            self.sanity = int(input("What Sanity %? "))
+
+        #Debug Menu
+        elif command == "debug" and self.debug == True:
+            self.debug = False
+        elif command == "debug":
+            self.debug = True
         
     def on_key_press(self, key, modifiers):
         """Check to see which key is being pressed and move the player in the
