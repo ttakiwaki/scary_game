@@ -21,11 +21,13 @@ class Monster(arcade.Sprite):
         
         self.center_x = center_x
         self.center_y = center_y
+        self.current_point = [center_x, center_y]
         
         self.change_x = change_x
         self.change_y = change_y
 
-        #stationary = False
+        self.stationary_shot = False
+        self.walking = False
         
     def look_for_point(self):
         x = random.randrange(SCREEN_WIDTH)
@@ -35,24 +37,28 @@ class Monster(arcade.Sprite):
     def update(self):
         """ Code to control the ball's movement"""
         # Move the ball
-        self.center_y += self.change_y / 5
-        self.center_x += self.change_x / 5
+        # self.center_y += self.change_y / 5
+        # self.center_x += self.change_x / 5
         
-        #See if the ball hi the edge of the screen, If so change direction
-        if self.center_x > SCREEN_WIDTH:
-            self.change_x *= -1
+        # #See if the ball hi the edge of the screen, If so change direction
+        # if self.center_x > SCREEN_WIDTH:
+        #     self.change_x *= -1
             
-        elif self.center_x < self.scale:
-            self.change_x *= -1            
+        # elif self.center_x < self.scale:
+        #     self.change_x *= -1            
             
-        elif self.center_y > SCREEN_HEIGHT:
-            self.change_y *= -1    
+        # elif self.center_y > SCREEN_HEIGHT:
+        #     self.change_y *= -1    
     
-        elif self.center_y < self.scale:
-            self.change_y *= -1
+        # elif self.center_y < self.scale:
+        #     self.change_y *= -1
 
         """Minecraft mob type movement. Find random [x,y] value, and once at the position, generate a new point to move to."""
-        
+
+        if self.stationary_shot == False and self.walking == False:
+            selected_point = self.look_for_point()
+            math.dist(self.current_point, selected_point)
+            
 
 
     def calc_radius(self, coor):
@@ -96,9 +102,7 @@ class MyGame(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Scary Game", fullscreen=False, resizable=True, update_rate=1/60)
         
         # Create the cameras. One for the GUI, one for the sprites.
-        # We scroll the 'sprite world' but not the GUI.
-        self.camera_for_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.camera_for_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)        
+        # We scroll the 'sprite world' but not the GUI.    
         
         self.set_location(100,100)
         
@@ -128,6 +132,7 @@ class MyGame(arcade.Window):
         self.tree_count = 10
         self.generator_count = 3
         self.sanity_initial = 100
+        self.cam_zoom = .5
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -138,7 +143,6 @@ class MyGame(arcade.Window):
         self.player_light = Light(0, 0, 200, arcade.color.WHITE, mode="soft")
         self.light_layer.add(self.player_light)
         arcade.set_background_color(arcade.color.AMAZON)
-
 
 
     def close(self):
@@ -217,9 +221,9 @@ class MyGame(arcade.Window):
 
                
     def on_draw(self):
-        arcade.start_render()  # or self.clear()
-
+        arcade.start_render()
         self.camera_sprites.use()
+        self.camera_sprites.scale = self.cam_zoom
         # Draw world into the light layer
         with self.light_layer:
 
@@ -395,17 +399,21 @@ class MyGame(arcade.Window):
         
         #Shooting
         elif key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/"
-                                          "laserBlue01.png", scale= 1)
-            bullet_speed = 13
-            bullet_sprite.change_y = 50 * math.cos(self.angle) + self.player_sprite.center_y
-            bullet_sprite.change_x = 50 * math.sin(self.angle) + self.player_sprite.center_x
-
+            bullet_sprite = arcade.Sprite(
+                ":resources:images/space_shooter/laserBlue01.png", scale=1
+            )
+            # Set starting position at player
             bullet_sprite.center_x = self.player_sprite.center_x
             bullet_sprite.center_y = self.player_sprite.center_y
-            bullet_sprite.update()
 
+            # Set velocity using angle (no player coordinates here)
+            bullet_speed = 10
+            bullet_sprite.change_x = bullet_speed * math.sin(self.angle)
+            bullet_sprite.change_y = bullet_speed * math.cos(self.angle)
+
+            # Add to bullet list
             self.bullet_list.append(bullet_sprite)
+
         #Command Prompt
         elif key == arcade.key.T:
             self.commands()
