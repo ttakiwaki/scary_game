@@ -111,7 +111,7 @@ class MyGame(arcade.Window):
         #True / False
         self.inventory_open = False
         self.enable_tracking = False
-        self.flashlight_on = False
+        self.gun_on = False
         self.left_pressed = False
         self.right_pressed = False
         
@@ -183,10 +183,10 @@ class MyGame(arcade.Window):
         return rate_of_consumption
 
     def on_uidraw(self):
-        #Draw Flashlight
+        #Draw gun
         x = 50 * math.sin(self.angle) + player_pos[0]
         y = 50 * math.cos(self.angle) + player_pos[1]
-        if self.flashlight_on == True:
+        if self.gun_on == True:
             arcade.draw_line(player_pos[0], player_pos[1], x, y, arcade.color.RED)
                                         
         #Draw Inventory
@@ -263,7 +263,7 @@ class MyGame(arcade.Window):
         elif 20 > player_pos[1]:
             self.player_sprite.change_y = 0
             
-        #Flashlight Update
+        #gun Update
         if self.left_pressed:
             self.angle -= 0.1
         elif self.right_pressed:
@@ -302,7 +302,7 @@ class MyGame(arcade.Window):
         """Check to see which key is being pressed and move the player in the
         appropriate direction"""
         
-        #Flashlight Angle
+        #gun Angle
         if key == arcade.key.LEFT:
             self.left_pressed = True
         
@@ -349,7 +349,7 @@ class MyGame(arcade.Window):
                     gen.generator_complete = True
                     gen.texture = arcade.load_texture("data/sprites/generator_sprite_on.png")
 
-        #Inventory & Flashlight Toggle
+        #Inventory & gun Toggle
         elif key == arcade.key.K:
             if self.inventory_open == False:
                 self.inventory_open = True
@@ -359,12 +359,12 @@ class MyGame(arcade.Window):
                 print("Inventory Close")
                 
         elif key == arcade.key.L:
-            if self.flashlight_on == False:
-                self.flashlight_on = True
-                print("Flashlight On")
+            if self.gun_on == False:
+                self.gun_on = True
+                print("gun On")
             else:
-                self.flashlight_on = False
-                print("Flashlight Off")        
+                self.gun_on = False
+                print("gun Off")        
         
         #Command Prompt
         elif key == arcade.key.T:
@@ -374,7 +374,7 @@ class MyGame(arcade.Window):
         """Check to see which key is being pressed and move the player in the
         appropriate direction"""
         
-        #Flashlight Angle
+        #gun Angle
         if key == arcade.key.LEFT:
             self.left_pressed = False
         

@@ -107,6 +107,7 @@ class MyGame(arcade.Window):
         self.monster_list = None
         self.tree_list = None
         self.generator_list = None
+        self.bullet_list = arcade.SpriteList()
         
         #Set up the player info
         self.player_sprite = None
@@ -117,7 +118,7 @@ class MyGame(arcade.Window):
         #True / False
         self.inventory_open = False
         self.enable_tracking = False
-        self.flashlight_on = False
+        self.gun_on = False
         self.left_pressed = False
         self.right_pressed = False
         
@@ -231,8 +232,9 @@ class MyGame(arcade.Window):
             self.generator_list.draw()
             self.monster_list.draw()
             self.player_list.draw()
+            self.bullet_list.draw()
 
-            if self.flashlight_on == True:
+            if self.gun_on == True:
                 x = 50 * math.sin(self.angle) + self.player_sprite.center_x
                 y = 50 * math.cos(self.angle) + self.player_sprite.center_y
                 arcade.draw_line(player_pos[0], player_pos[1], x, y, arcade.color.RED)
@@ -256,6 +258,9 @@ class MyGame(arcade.Window):
         #Sanity Decrease
         self.sanity_decrease()
 
+        self.bullet_list.update()
+
+
         self.player_light.position = (self.player_sprite.center_x,
                               self.player_sprite.center_y)
         
@@ -272,7 +277,7 @@ class MyGame(arcade.Window):
         elif 20 > player_pos[1]:
             self.player_sprite.change_y = 0
             
-        #Flashlight Update
+        #gun Update
         if self.left_pressed:
             self.angle -= 0.1
         elif self.right_pressed:
@@ -325,12 +330,11 @@ class MyGame(arcade.Window):
         """Check to see which key is being pressed and move the player in the
         appropriate direction"""
         
-        #Flashlight Angle
+        #gun Angle
         if key == arcade.key.LEFT:
             self.left_pressed = True
-        
         elif key == arcade.key.RIGHT:
-            self.right_pressed += True    
+            self.right_pressed = True    
         
         #Movement Keys (W, A, S, D)
         elif key == arcade.key.W:
@@ -372,7 +376,7 @@ class MyGame(arcade.Window):
                     gen.generator_complete = True
                     gen.texture = arcade.load_texture("data/sprites/generator_sprite_on.png")
 
-        #Inventory & Flashlight Toggle
+        #Inventory & gun Toggle
         elif key == arcade.key.K:
             if self.inventory_open == False:
                 self.inventory_open = True
@@ -382,13 +386,26 @@ class MyGame(arcade.Window):
                 print("Inventory Close")
                 
         elif key == arcade.key.L:
-            if self.flashlight_on == False:
-                self.flashlight_on = True
-                print("Flashlight On")
+            if self.gun_on == False:
+                self.gun_on = True
+                print("gun On")
             else:
-                self.flashlight_on = False
-                print("Flashlight Off")        
+                self.gun_on = False
+                print("gun Off")        
         
+        #Shooting
+        elif key == arcade.key.SPACE:
+            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/"
+                                          "laserBlue01.png", scale= 1)
+            bullet_speed = 13
+            bullet_sprite.change_y = 50 * math.cos(self.angle) + self.player_sprite.center_y
+            bullet_sprite.change_x = 50 * math.sin(self.angle) + self.player_sprite.center_x
+
+            bullet_sprite.center_x = self.player_sprite.center_x
+            bullet_sprite.center_y = self.player_sprite.center_y
+            bullet_sprite.update()
+
+            self.bullet_list.append(bullet_sprite)
         #Command Prompt
         elif key == arcade.key.T:
             self.commands()
@@ -397,7 +414,7 @@ class MyGame(arcade.Window):
         """Check to see which key is being pressed and move the player in the
         appropriate direction"""
         
-        #Flashlight Angle
+        #gun Angle
         if key == arcade.key.LEFT:
             self.left_pressed = False
         
