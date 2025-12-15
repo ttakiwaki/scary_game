@@ -122,6 +122,11 @@ class MyGame(arcade.Window):
         self.generator_count = 3
         self.sanity_initial = 100
 
+        #Audio
+        self.bgm = arcade.load_sound("data/audio/bgm/06.There_In_Spirit.wav")
+
+        #BGM Player
+        self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
         arcade.set_background_color(arcade.color.AMAZON)
 
 

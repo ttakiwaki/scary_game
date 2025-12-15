@@ -163,6 +163,12 @@ class MyGame(arcade.Window):
         self.sanity_decrease()
         self.sanity = self.sanity_initial
 
+        #Audio
+        self.bgm = arcade.load_sound("data/audio/bgm/06.There_In_Spirit.wav")
+
+        #BGM Player
+        self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
+
 
     def close(self):
         """Close the Window and stop background music"""
