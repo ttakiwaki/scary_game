@@ -9,7 +9,7 @@ from arcade.experimental.lights import Light, LightLayer
 
 # --- Constants ---
 CAMERA_SPEED = 0.1
-MONSTER_RADIUS = 400
+MONSTER_RADIUS = 300
 MOVE_SPEED = 3.5
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
@@ -27,12 +27,12 @@ class Monster(arcade.Sprite):
 
         self.stationary_shot = False
         self.target_exists = False
-        self.monster_speed = 5
+        self.monster_speed = 3
         self.target_store = []
 
         self.delay = 0
         self.delay_max = 0
-        
+
     def look_for_point(self):
         x = random.randrange(SCREEN_WIDTH)
         y = random.randrange(SCREEN_HEIGHT)
@@ -76,12 +76,18 @@ class Monster(arcade.Sprite):
                     
     def calc_radius(self, coor):
         monster_distance = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
-        global enable_tracking, MONSTER_RADIUS
+        global enable_tracking, MONSTER_RADIUS, in_radius
         #print(monster_distance)
         if monster_distance  <= MONSTER_RADIUS:
             enable_tracking = True
+            in_radius = True
         else:
             enable_tracking = False
+            in_radius = False
+
+    def get_distance(self, coor):
+        dist = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
+        return dist
         
 class Generator(arcade.Sprite):
     def __init__(self, generator_sprite_on, generator_sprite_off, scale, center_x, center_y):
@@ -138,6 +144,8 @@ class MyGame(arcade.Window):
         self.right_pressed = False
         self.debug = False
         self.show_sanity = True
+        global in_radius
+        in_radius = True
         
         #Integers
         self.score = 0
@@ -218,7 +226,6 @@ class MyGame(arcade.Window):
         self.generator_list = arcade.SpriteList()
         for i in range(self.generator_count):
             generator_coor = coordinate_generate()
-
             generator = Generator("data/sprites/generator_sprite.png", "data/sprites/generator_sprite_on.png", scale= 0.2, center_x= generator_coor[0], center_y= generator_coor[1])
             self.generator_list.append(generator)
 
@@ -227,8 +234,10 @@ class MyGame(arcade.Window):
         self.rate_of_consumption = 1 * decrease_factor**(self.level-1)
         return self.rate_of_consumption
     
-
     def on_uidraw(self):     
+
+        self.shapes = arcade.ShapeElementList()
+
         #Draw Inventory
         if self.inventory_open == True:
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, arcade.color.BLACK)
@@ -255,7 +264,7 @@ class MyGame(arcade.Window):
             meter_width = SCREEN_WIDTH / 4
             meter_height = SCREEN_HEIGHT / 12
             margin = 10
-            center_x = SCREEN_WIDTH - meter_width / 2 - margin
+            center_x = meter_width / 2 + margin
             center_y = meter_height / 2 + margin
             arcade.draw_rectangle_filled(center_x, center_y, meter_width, meter_height, arcade.color.BLACK)
             arcade.draw_rectangle_outline(center_x,center_y,meter_width, meter_height, arcade.color.WHITE, border_width=3)
@@ -265,6 +274,23 @@ class MyGame(arcade.Window):
             fill_width = meter_width * sanity_ratio
             arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
             arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
+
+        #Draw Alert bar
+        if in_radius == True:
+            for monster in self.monster_list:
+                dist = monster.get_distance(PLAYER_POS)
+                if dist <= MONSTER_RADIUS:
+                    # when dist = 200: opacity = 0
+                    opacity = abs(dist - MONSTER_RADIUS) / MONSTER_RADIUS 
+                    color1 = (136, 8, 8, int(255 * opacity))
+                else:
+                    color1 = (136, 8, 8, 0)
+            color2 = (136, 8, 8, 0)
+            points = (0, SCREEN_HEIGHT-200), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT-200)
+            colors = (color2, color1, color1, color2)
+            rect = arcade.create_rectangle_filled_with_colors(points, colors)
+            self.shapes.append(rect)
+            self.shapes.draw()
 
     def on_draw(self):
         arcade.start_render()
@@ -287,7 +313,7 @@ class MyGame(arcade.Window):
             if self.gun_on == True:
                 x = 50 * math.sin(self.angle) + self.player_sprite.center_x
                 y = 50 * math.cos(self.angle) + self.player_sprite.center_y
-                arcade.draw_line(player_pos[0], player_pos[1], x, y, arcade.color.RED)
+                arcade.draw_line(PLAYER_POS[0], PLAYER_POS[1], x, y, arcade.color.RED)
 
         # Draw the lighting effect over the world
         self.light_layer.draw()
@@ -302,8 +328,8 @@ class MyGame(arcade.Window):
         #Call update on all sprites (Sprites dont do much in this example)
         self.player_list.update()
         self.player_list.update_animation()
-        global player_pos, MONSTER_RADIUS, MOVE_SPEED
-        player_pos = self.player_sprite.position
+        global PLAYER_POS, MONSTER_RADIUS, MOVE_SPEED
+        PLAYER_POS = self.player_sprite.position
     
 
         #Sanity Decrease and Effects
@@ -324,16 +350,16 @@ class MyGame(arcade.Window):
                               self.player_sprite.center_y)
         
         #Player Movement Update
-        if SCREEN_WIDTH-10 < player_pos[0]:
+        if SCREEN_WIDTH-10 < PLAYER_POS[0]:
             self.player_sprite.change_x = 0
             
-        elif 20 > player_pos[0]:
+        elif 20 > PLAYER_POS[0]:
             self.player_sprite.change_x = 0
                 
-        if SCREEN_HEIGHT-10 < player_pos[1]:
+        if SCREEN_HEIGHT-10 < PLAYER_POS[1]:
             self.player_sprite.change_y = 0
                 
-        elif 20 > player_pos[1]:
+        elif 20 > PLAYER_POS[1]:
             self.player_sprite.change_y = 0
             
         #Gun Update
@@ -345,7 +371,7 @@ class MyGame(arcade.Window):
 
         #Monster Update
         for monster in self.monster_list:
-            monster.calc_radius(player_pos)        
+            monster.calc_radius(PLAYER_POS)        
 
         self.monster_list.update()
         monster_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.monster_list)
@@ -354,7 +380,7 @@ class MyGame(arcade.Window):
 
         #Generator Update
         for generator in self.generator_list:
-            generator.calc_interact(player_pos)
+            generator.calc_interact(PLAYER_POS)
 
         self.scroll_to_player()
             

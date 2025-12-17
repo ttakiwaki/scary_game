@@ -189,10 +189,10 @@ class MyGame(arcade.Window):
 
     def on_uidraw(self):
         #Draw gun
-        x = 50 * math.sin(self.angle) + player_pos[0]
-        y = 50 * math.cos(self.angle) + player_pos[1]
+        x = 50 * math.sin(self.angle) + PLAYER_POS[0]
+        y = 50 * math.cos(self.angle) + PLAYER_POS[1]
         if self.gun_on == True:
-            arcade.draw_line(player_pos[0], player_pos[1], x, y, arcade.color.RED)
+            arcade.draw_line(PLAYER_POS[0], PLAYER_POS[1], x, y, arcade.color.RED)
                                         
         #Draw Inventory
         if self.inventory_open == True:
@@ -249,23 +249,23 @@ class MyGame(arcade.Window):
         #Call update on all sprites (Sprites dont do much in this example)
         self.player_list.update()
         self.player_list.update_animation()
-        global player_pos
-        player_pos = self.player_sprite.position
+        global PLAYER_POS
+        PLAYER_POS = self.player_sprite.position
 
         #Sanity Decrease
         self.sanity_decrease()
         
         #Player Movement Update
-        if SCREEN_WIDTH-10 < player_pos[0]:
+        if SCREEN_WIDTH-10 < PLAYER_POS[0]:
             self.player_sprite.change_x = 0
             
-        elif 20 > player_pos[0]:
+        elif 20 > PLAYER_POS[0]:
             self.player_sprite.change_x = 0
                 
-        if SCREEN_HEIGHT-10 < player_pos[1]:
+        if SCREEN_HEIGHT-10 < PLAYER_POS[1]:
             self.player_sprite.change_y = 0
                 
-        elif 20 > player_pos[1]:
+        elif 20 > PLAYER_POS[1]:
             self.player_sprite.change_y = 0
             
         #gun Update
@@ -276,7 +276,7 @@ class MyGame(arcade.Window):
 
         #Monster Update
         for monster in self.monster_list:
-            monster.calc_radius(player_pos)        
+            monster.calc_radius(PLAYER_POS)        
 
         self.monster_list.update()
         monster_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.monster_list)
@@ -285,7 +285,7 @@ class MyGame(arcade.Window):
 
         #Generator Update
         for generator in self.generator_list:
-            generator.calc_interact(player_pos)
+            generator.calc_interact(PLAYER_POS)
             
 
     def commands(self):
