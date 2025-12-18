@@ -6,7 +6,6 @@ import math
 from pyglet.math import Vec2
 from arcade.experimental.lights import Light, LightLayer
 
-
 # --- Constants ---
 CAMERA_SPEED = 0.1
 MONSTER_RADIUS = 300
@@ -73,7 +72,7 @@ class Monster(arcade.Sprite):
 
                 self.center_x += self.change_x
                 self.center_y += self.change_y
-                    
+
     def calc_radius(self, coor):
         monster_distance = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
         global enable_tracking, MONSTER_RADIUS, in_radius
@@ -234,7 +233,7 @@ class MyGame(arcade.Window):
         self.rate_of_consumption = 1 * decrease_factor**(self.level-1)
         return self.rate_of_consumption
     
-    def on_uidraw(self):     
+    def on_uidraw(self):
 
         self.shapes = arcade.ShapeElementList()
 
@@ -279,9 +278,9 @@ class MyGame(arcade.Window):
         if in_radius == True:
             for monster in self.monster_list:
                 dist = monster.get_distance(PLAYER_POS)
-                if dist <= MONSTER_RADIUS:
+                if dist <= 450:
                     # when dist = 200: opacity = 0
-                    opacity = abs(dist - MONSTER_RADIUS) / MONSTER_RADIUS 
+                    opacity = abs(dist - 450) / 450 
                     color1 = (136, 8, 8, int(255 * opacity))
                 else:
                     color1 = (136, 8, 8, 0)
