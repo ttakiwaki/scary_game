@@ -14,9 +14,11 @@ MOVE_SPEED = 3.5
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
 class Monster(arcade.Sprite):
-    def __init__(self, monster_sprite, scale, center_x, center_y, change_x, change_y):
+    def __init__(self, texture, scale, center_x, center_y, change_x, change_y):
         """ Constructor. """
-        super().__init__(monster_sprite, scale)
+        super().__init__(texture=texture, scale=scale)
+
+        self.texture.filter = arcade.gl.NEAREST
         
         self.center_x = center_x
         self.center_y = center_y
@@ -32,6 +34,8 @@ class Monster(arcade.Sprite):
         self.delay = 0
         self.delay_max = 0
 
+        # Change sprite direction
+
     def look_for_point(self):
         x = random.randrange(SCREEN_WIDTH)
         y = random.randrange(SCREEN_HEIGHT)
@@ -43,6 +47,7 @@ class Monster(arcade.Sprite):
         if self.stationary_shot == False and self.target_exists == False:
             if self.delay > 0:
                 self.delay -= 1
+                self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=0, y=0, width=32, height=32)
                 return
 
             target_point = self.look_for_point()
@@ -51,11 +56,11 @@ class Monster(arcade.Sprite):
 
         if self.target_exists == True:
             dist = math.dist([self.center_x, self.center_y], self.target_store)
-
             if dist <= 10:
                 self.change_x = 0
                 self.change_y = 0
                 self.target_exists = False
+
                 self.delay_max = random.randint(30, 120)
                 self.delay = self.delay_max
                 return
@@ -73,6 +78,12 @@ class Monster(arcade.Sprite):
                 self.center_x += self.change_x
                 self.center_y += self.change_y
 
+        if self.change_x > 0:
+            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=64, y=0, width=32, height=32)
+        elif self.change_x < 0:
+            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=32, y=0, width=32, height=32)
+
+
     def calc_radius(self, coor):
         monster_distance = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
         global enable_tracking, MONSTER_RADIUS, in_radius
@@ -89,9 +100,10 @@ class Monster(arcade.Sprite):
         return dist
         
 class Generator(arcade.Sprite):
-    def __init__(self, generator_sprite_on, generator_sprite_off, scale, center_x, center_y):
+    def __init__(self, texture, scale, center_x, center_y):
         """Constructor"""
-        super().__init__(generator_sprite_on, scale)
+        super().__init__(texture=texture, scale=scale)
+        self.texture.filter = arcade.gl.NEAREST
         
         #Location 
         self.center_x = center_x
@@ -211,21 +223,30 @@ class MyGame(arcade.Window):
         
         #Set up the monster
         self.monster_list = arcade.SpriteList()
-        monster = Monster("data/sprites/angry_face.png", 0.5, 10, 10, 10, 10)
+        monster_texture = arcade.load_texture("data/sprites/monster_sprite.png", x=0, y=0, width=32, height=32)
+        monster = Monster(monster_texture, 2.5, 10, 10, 10, 10)
         self.monster_list.append(monster)
         
         #Set up trees
         self.tree_list = arcade.SpriteList()
+        tree_texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=0, y=32, width=32, height=32)
         for i in range(self.tree_count):
             tree_coor = coordinate_generate()
-            tree = arcade.Sprite("data/sprites/tree_sprite.png", scale= 1, center_x= tree_coor[0], center_y= tree_coor[1])
+
+            tree = arcade.Sprite(scale=4)
+            tree.texture = tree_texture
+            tree.center_x = tree_coor[0]
+            tree.center_y = tree_coor[1]
+
             self.tree_list.append(tree)
+
 
         #Set up generators
         self.generator_list = arcade.SpriteList()
         for i in range(self.generator_count):
             generator_coor = coordinate_generate()
-            generator = Generator("data/sprites/generator_sprite.png", "data/sprites/generator_sprite_on.png", scale= 0.2, center_x= generator_coor[0], center_y= generator_coor[1])
+            generator_texture_off = arcade.load_texture("data/sprites/terrain_sprite.png", x=0, y=0, width=32, height=32)
+            generator = Generator(generator_texture_off, scale= 1.5, center_x= generator_coor[0], center_y= generator_coor[1])
             self.generator_list.append(generator)
 
     def sanity_decrease(self):
@@ -360,7 +381,7 @@ class MyGame(arcade.Window):
                 
         elif 20 > PLAYER_POS[1]:
             self.player_sprite.change_y = 0
-            
+        
         #Gun Update
         if self.left_pressed:
             self.angle -= 0.1
@@ -471,7 +492,7 @@ class MyGame(arcade.Window):
             for gen in self.generator_list:
                 if gen.interactable == True and gen.generator_complete == False:
                     gen.generator_complete = True
-                    gen.texture = arcade.load_texture("data/sprites/generator_sprite_on.png")
+                    gen.texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=32, y=0, width=32, height=32)
 
         #Inventory & gun Toggle
         elif key == arcade.key.K:
