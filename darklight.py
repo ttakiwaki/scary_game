@@ -9,34 +9,79 @@ from arcade.experimental.lights import Light, LightLayer
 # --- Constants ---
 CAMERA_SPEED = 0.1
 #MONSTER_RADIUS = 300
-MOVE_SPEED = 3.5
+MOVE_SPEED = 3
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
 levels = {
     1: {
         "map": "data/maps/map1.json",
-        "monster" : 0,
-        "generator": 1,
         "sanity_drain": 0.05,
         "monster_radius": 300,
-        "tree_count": 10,
-        "generator_count": 1,
-        "world_border": [288*3, 320*3]
+        "monsters": 0,
+        "world_border": [288*3, 320*3],
+        "spawn_point": [144*3, 16*3],
+        "monster_spawn": (10000, 10000),
+        "tree_coordinates": [(16*3, 48*3), (16*3, 176*3), (48*3, 16*3),
+                             (48*3, 80*3), (48*3, 144*3), (48*3, 208*3),
+                             (48*3, 272*3), (48*3, 80*3), (80*3, 80*3),
+                             (80*3, 240*3), (80*3, 304*3), (48*3, 80*3),
+                             (208*3, 80*3), (208*3, 144*3), (208*3, 272*3),
+                             (208*3, 80*3), (240*3, 48*3), (240*3, 112*3),
+                             (240*3, 176*3), (240*3, 240*3), (240*3, 304*3),
+                             (272*3, 16*3), (272*3, 208*3)],
+        "generator_coordinates": [[144*3, 176*3]],
+        "required_generators": 1,
+        "objective": "Activate Generators"
     },
     2: {
-        "map": "data/maps/map1.json",
-        "monster" : 1,
-        "generator": 2,
+        "map": "data/maps/map2.json",
         "sanity_drain": 0.05,
         "monster_radius": 300,
-        "tree_count": 10,
-        "generator_count": 2
+        "monsters": 1,
+        "world_border": [640*3, 640*3],
+        "spawn_point": [144*3, 16*3],
+        "monster_spawn": (((32*17)+16)*3, ((32*19)+16)*3),
+        "tree_coordinates": [(16*3, 144*3), (16*3, 304*3), (16*3, 560*3),
+                             (48*3, 16*3), (48*3, 240*3), (80*3, 400*3),
+                             (80*3, 496*3), (((32*3)+16)*3, ((32*18)+16)*3), (((32*5)+16)*3, ((32*0)+16)*3), (((32*5)+16)*3, ((32*13)+16)*3),
+                             (((32*5)+16)*3, ((32*13)+16)*3), (((32*5)+16)*3, ((32*17)+16)*3), (((32*6)+16)*3, ((32*5)+16)*3), (((32*6)+16)*3, ((32*19)+16)*3),
+                             (((32*7)+16)*3, ((32*11)+16)*3), (((32*7)+16)*3, ((32*14)+16)*3), (((32*9)+16)*3, ((32*2)+16)*3), (((32*11)+16)*3, ((32*7)+16)*3),
+                             (((32*12)+16)*3, ((32*4)+16)*3), (((32*12)+16)*3, ((32*14)+16)*3), (((32*12)+16)*3, ((32*19)+16)*3), (((32*13)+16)*3, ((32*12)+16)*3),
+                             (((32*14)+16)*3, ((32*17)+16)*3), (((32*15)+16)*3, ((32*2)+16)*3), (((32*15)+16)*3, ((32*13)+16)*3), (((32*16)+16)*3, ((32*1)+16)*3),
+                             (((32*16)+16)*3, ((32*19)+16)*3), (((32*17)+16)*3, ((32*4)+16)*3), (((32*18)+16)*3, ((32*12)+16)*3), (((32*18)+16)*3, ((32*15)+16)*3),
+                             (((32*18)+16)*3, ((32*19)+16)*3)
+                             ],
+        "generator_coordinates": [(((32*17)+16)*3, ((32*9)+16)*3), (((32*2)+16)*3, ((32*17)+16)*3)],
+        "required_generators": 2,
+        "objective": "Activate Generators"
+    },
+    3: {
+        "map": "data/maps/map3.json",
+        "sanity_drain": 0.05,
+        "monster_radius": 300,
+        "monsters": 2,
+        "world_border": [800*3, 800*3],
+        "spawn_point": (((32*22)+16)*3, ((32*0)+16)*3),
+        "monster_spawn": (32*3, 32*3),
+        "tree_coordinates": [(((32*0)+16)*3, ((32*19)+16)*3), (((32*0)+16)*3, ((32*22)+16)*3), (((32*1)+16)*3, ((32*2)+16)*3),  (((32*1)+16)*3, ((32*23)+16)*3),
+                             (((32*2)+16)*3, ((32*22)+16)*3), (((32*2)+16)*3, ((32*24)+16)*3), (((32*4)+16)*3, ((32*2)+16)*3), (((32*4)+16)*3, ((32*19)+16)*3),
+                             (((32*5)+16)*3, ((32*23)+16)*3), (((32*6)+16)*3, ((32*19)+16)*3), (((32*7)+16)*3, ((32*19)+16)*3), (((32*7)+16)*3, ((32*22)+16)*3),
+                             (((32*8)+16)*3, ((32*23)+16)*3), (((32*9)+16)*3, ((32*2)+16)*3), (((32*9)+16)*3, ((32*19)+16)*3), (((32*10)+16)*3, ((32*1)+16)*3),
+                             (((32*10)+16)*3, ((32*24)+16)*3), (((32*11)+16)*3, ((32*19)+16)*3), (((32*11)+16)*3, ((32*23)+16)*3), (((32*13)+16)*3, ((32*2)+16)*3), (((32*13)+16)*3, ((32*19)+16)*3),
+                             (((32*13)+16)*3, ((32*22)+16)*3), (((32*14)+16)*3, ((32*19)+16)*3), (((32*14)+16)*3, ((32*23)+16)*3), (((32*14)+16)*3, ((32*24)+16)*3),
+                             (((32*20)+16)*3, ((32*2)+16)*3), (((32*20)+16)*3, ((32*16)+16)*3), (((32*20)+16)*3, ((32*23)+16)*3), (((32*21)+16)*3, ((32*24)+16)*3),
+                             (((32*21)+16)*3, ((32*7)+16)*3), (((32*22)+16)*3, ((32*16)+16)*3), (((32*22)+16)*3, ((32*23)+16)*3), (((32*23)+16)*3, ((32*9)+16)*3),
+                             (((32*23)+16)*3, ((32*16)+16)*3), (((32*24)+16)*3, ((32*4)+16)*3), (((32*24)+16)*3, ((32*16)+16)*3), (((32*24)+16)*3, ((32*23)+16)*3)
+                             ],
+        "generator_coordinates": [(((32*7)+16)*3, ((32*1)+16)*3), (((32*13)+16)*3, ((32*17)+16)*3), (((32*24)+16)*3, ((32*24)+16)*3)],
+        "required_generators": 3,
+        "objective": "Activate Generators"
     }
 }
 
 class Monster(arcade.Sprite):
-    def __init__(self, texture, scale, center_x, center_y, change_x, change_y):
+    def __init__(self, texture, scale, center_x, center_y, change_x, change_y, level_data):
         """ Constructor. """
         super().__init__(texture=texture, scale=scale)
 
@@ -56,11 +101,11 @@ class Monster(arcade.Sprite):
         self.delay = 0
         self.delay_max = 0
 
-        # Change sprite direction
+        self.level_data = level_data
 
     def look_for_point(self):
-        x = random.randrange(SCREEN_WIDTH)
-        y = random.randrange(SCREEN_HEIGHT)
+        x = random.randrange(self.level_data["world_border"][0])
+        y = random.randrange(self.level_data["world_border"][1])
         return x, y
     
     def update(self):
@@ -134,7 +179,7 @@ class Generator(arcade.Sprite):
 
         #Interactability States
         self.interactable = False
-        self.generator_complete = False
+        self.generator_activated = False
         self.reach = 50
 
     def calc_interact(self, coor):
@@ -153,7 +198,8 @@ class MyGame(arcade.Window):
         #Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Scary Game", fullscreen=False, resizable=True, update_rate=1/60)
         
-        self.set_location(100,100)
+        #Physics Engine
+        self.physics_engine = None
         
         #Variables that will hold sprite lists.
         self.player_list = None
@@ -164,10 +210,12 @@ class MyGame(arcade.Window):
         
         #Set up the player info
         self.player_sprite = None
+        self.generators_complete = False
         
         #Set up environment info
-        self.level = 1
+        self.level_num = 3
         self.sanity_color = arcade.color.GREEN
+        self.fade_opacity = 0
         
         #True / False
         self.inventory_open = False
@@ -177,8 +225,10 @@ class MyGame(arcade.Window):
         self.right_pressed = False
         self.debug = False
         self.show_sanity = True
+        self.show_objective = True
+        self.fading_screen = False
         global in_radius
-        in_radius = True
+        in_radius = False
         
         #Integers
         self.score = 0
@@ -187,7 +237,7 @@ class MyGame(arcade.Window):
         self.sanity = 0
         self.cam_zoom = .5
         self.rate_of_consumption = 0
-        self.level_num = 1
+        self.generator_count = 0
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -205,9 +255,13 @@ class MyGame(arcade.Window):
 
         #Audio
         self.bgm = arcade.load_sound("data/audio/bgm/06.There_In_Spirit.wav")
+        self.heartbeat = arcade.load_sound("data/audio/sfx/heartbeat.wav")
 
+        #Audio Players
+        self.heartbeat_playing = False
+        self.heartbeat_player = None
         #BGM Player
-        self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
+        #self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
 
     def load_level(self):
         global MONSTER_RADIUS
@@ -216,9 +270,15 @@ class MyGame(arcade.Window):
         self.level = self.level_num
         self.level_data = levels[self.level]
 
-        #Load Map
-        self.tile_map = arcade.load_tilemap(self.level_data["map"], scaling=3)
-        self.tile_list = self.tile_map.sprite_lists["Ground"]
+        #Reset Maps
+        self.tile_map = None
+        self.tile_list = None
+        self.object_list = None
+        self.generators_complete = False
+        self.generator_count = 0
+
+        #Reset old Map Variables
+        self.fade_opacity = 0
 
         #Empty old sprite lists
         self.bullet_list = arcade.SpriteList()
@@ -229,9 +289,10 @@ class MyGame(arcade.Window):
         MONSTER_RADIUS = self.level_data["monster_radius"]
 
         #Spawn Monsters and Environment
-        self.monster_spawn()
-        self.tree_spawn(self.level_data["tree_count"])
-        self.generator_spawn(self.level_data["generator_count"])
+        for i in range(self.level_data["monsters"]):
+            self.monster_spawn(self.level_data)
+        self.tree_spawn(self.level_data["tree_coordinates"])
+        self.generator_spawn(self.level_data["generator_coordinates"])
 
         #Player Spawning
         self.player_list = arcade.SpriteList()
@@ -242,10 +303,10 @@ class MyGame(arcade.Window):
         self.player_sprite.frames.append(anim)
         
         #Set up the player
-        self.player_sprite.center_x = 50
-        self.player_sprite.center_y = 64
+        self.player_sprite.center_x = self.level_data["spawn_point"][0]
+        self.player_sprite.center_y = self.level_data["spawn_point"][1]
         self.player_list.append(self.player_sprite)
-        print("PLAYER SPAWNED AT:", self.player_sprite.center_x, self.player_sprite.center_y)
+        #print("PLAYER SPAWNED AT:", self.player_sprite.center_x, self.player_sprite.center_y)
         self.inventory_dict = {
             "health_1": 0,
             "sanity_1": 0,
@@ -253,6 +314,17 @@ class MyGame(arcade.Window):
             "health_2": 0,
             "sanity_2": 0,
             "speed_2": 0,}
+        
+        #Load Map
+        self.tile_map = arcade.load_tilemap(self.level_data["map"], scaling=3)
+        self.tile_list = self.tile_map.sprite_lists["Ground"]
+        #TRY EXCEPT FOR THE OBJECT LAYER
+        try:
+            self.object_list = self.tile_map.sprite_lists["Object"]
+            self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.object_list)
+        except:
+            self.object_list = None
+            self.physics_engine = None
 
 
     def close(self):
@@ -262,8 +334,6 @@ class MyGame(arcade.Window):
     def setup(self):
         pass
         # """Set up the game and initialize the variables."""
-        
-
         # #Sprite Lists
         # self.player_list = arcade.SpriteList()
         # self.player_sprite = arcade.AnimatedTimeBasedSprite()
@@ -291,39 +361,36 @@ class MyGame(arcade.Window):
             generated_coordinate = [x, y]
             return generated_coordinate
     
-    def monster_spawn(self):
+    def monster_spawn(self, level_data):
         #Set up the monster
-        self.monster_list = arcade.SpriteList()
         monster_texture = arcade.load_texture("data/sprites/monster_sprite.png", x=0, y=0, width=32, height=32)
-        monster = Monster(monster_texture, 2.5, 10, 10, 10, 10)
+        monster = Monster(monster_texture, 2.5, self.level_data["monster_spawn"][0], self.level_data["monster_spawn"][1], 10, 10, level_data)
         self.monster_list.append(monster)
 
-    def tree_spawn(self, count):   
+    def tree_spawn(self, coordinate):   
         #Set up trees
         self.tree_list = arcade.SpriteList()
         tree_texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=0, y=32, width=32, height=32)
-        for i in range(count):
-            tree_coor = self.coordinate_generate()
+        for i in coordinate:
 
             tree = arcade.Sprite(scale=4)
             tree.texture = tree_texture
-            tree.center_x = tree_coor[0]
-            tree.center_y = tree_coor[1]
+            tree.center_x = i[0]
+            tree.center_y = i[1]
 
             self.tree_list.append(tree)
 
-    def generator_spawn(self, count):
+    def generator_spawn(self, coordinate):
         #Set up generators
         self.generator_list = arcade.SpriteList()
-        for i in range(count):
-            generator_coor = self.coordinate_generate()
+        for i in coordinate:
             generator_texture_off = arcade.load_texture("data/sprites/terrain_sprite.png", x=0, y=0, width=32, height=32)
-            generator = Generator(generator_texture_off, scale= 1.5, center_x= generator_coor[0], center_y= generator_coor[1])
+            generator = Generator(generator_texture_off, scale= 1.5, center_x= i[0], center_y= i[1])
             self.generator_list.append(generator)
 
     def sanity_decrease(self):
         decrease_factor = 1.3
-        self.rate_of_consumption = 1 * decrease_factor**(self.level-1)
+        self.rate_of_consumption = 1 * decrease_factor**(self.level_num-1)
         return self.rate_of_consumption
     
     def on_uidraw(self):
@@ -354,8 +421,8 @@ class MyGame(arcade.Window):
         if self.show_sanity == True:
             #Draw Sanity Meter Outline
             meter_width = SCREEN_WIDTH / 4
-            meter_height = SCREEN_HEIGHT / 12
-            margin = 10
+            meter_height = SCREEN_HEIGHT / 25
+            margin = 5
             center_x = meter_width / 2 + margin
             center_y = meter_height / 2 + margin
             arcade.draw_rectangle_filled(center_x, center_y, meter_width, meter_height, arcade.color.BLACK)
@@ -366,6 +433,12 @@ class MyGame(arcade.Window):
             fill_width = meter_width * sanity_ratio
             arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
             arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
+
+        #Draw Objective
+        if self.show_objective:
+             margin = 5
+             arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
+                              margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
 
         #Draw Alert bar
         if in_radius == True:
@@ -384,16 +457,22 @@ class MyGame(arcade.Window):
             self.shapes.append(rect)
             self.shapes.draw()
 
+        #Draw Fade to black
+        if self.fading_screen == True:
+            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, self.fade_opacity))
+
+
     def on_draw(self):
         arcade.start_render()
         self.camera_sprites.use()
         self.camera_sprites.scale = self.cam_zoom
         # Draw world into the light layer
         with self.light_layer:
-
             #arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (42, 59, 36))  
             self.tile_list.draw()
             self.tree_list.draw()
+            if self.object_list != None:
+                self.object_list.draw()                
             self.generator_list.draw()
             self.monster_list.draw()
             self.player_list.draw()
@@ -413,13 +492,12 @@ class MyGame(arcade.Window):
 
     def update(self, delta_time):
         """Movement and game logic"""
-        
-        #Call update on all sprites (Sprites dont do much in this example)
-        self.player_list.update()
         self.player_list.update_animation()
         global PLAYER_POS, MONSTER_RADIUS, MOVE_SPEED
         PLAYER_POS = self.player_sprite.position
     
+        if self.object_list != None:
+            self.physics_engine.update()
 
         #Sanity Decrease and Effects
         self.sanity -= 0.05 * (delta_time/2)
@@ -447,10 +525,10 @@ class MyGame(arcade.Window):
                 
         if self.level_data["world_border"][1]-10 < PLAYER_POS[1]:
             self.player_sprite.change_y = 0
-                
+             
         elif 20 > PLAYER_POS[1]:
             self.player_sprite.change_y = 0
-        
+    
         #Gun Update
         if self.left_pressed:
             self.angle -= 0.1
@@ -471,7 +549,36 @@ class MyGame(arcade.Window):
         for generator in self.generator_list:
             generator.calc_interact(PLAYER_POS)
 
+        #Are we in monster Radius? 
+        if in_radius == True:
+            dist = monster.get_distance(PLAYER_POS)
+            if dist <= 450:
+                heart_speed = abs(dist - 450) /  450
+                if self.heartbeat_playing == False:
+                    self.heartbeat_player = self.heartbeat.play(volume = 3, loop = True, speed = heart_speed)
+                    self.heartbeat_playing = True
+                else:
+                    self.heartbeat_player.pitch = heart_speed
+        else:
+            if self.heartbeat_playing == True:
+                self.heartbeat_player.pause()
+                self.heartbeat_playing = False  
+        
+        if self.generator_count == self.level_data["required_generators"]:
+            self.fading_screen = True
+
+        if self.fading_screen == True:
+            self.fade_opacity += 2.5
+            if self.fade_opacity >= 255:
+                self.fade_opacity = 255
+                self.fading_screen = False
+                self.level_transfer()
+
         self.scroll_to_player()
+
+    def level_transfer(self):
+        self.level_num += 1
+        self.load_level()
             
     def scroll_to_player(self):
         """
@@ -559,8 +666,9 @@ class MyGame(arcade.Window):
         #Generator Interactivity Key
         elif key == arcade.key.E:
             for gen in self.generator_list:
-                if gen.interactable == True and gen.generator_complete == False:
-                    gen.generator_complete = True
+                if gen.interactable == True and gen.generator_activated == False:
+                    gen.generator_activated = True
+                    self.generator_count += 1
                     gen.texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=32, y=0, width=32, height=32)
 
         #Inventory & gun Toggle
@@ -647,7 +755,6 @@ class MyGame(arcade.Window):
 def main():
     """Main Method"""
     window = MyGame()
-    window.setup()
     window.load_level()
     arcade.run()
     
