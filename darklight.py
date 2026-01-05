@@ -9,7 +9,7 @@ from arcade.experimental.lights import Light, LightLayer
 # --- Constants ---
 CAMERA_SPEED = 0.1
 #MONSTER_RADIUS = 300
-MOVE_SPEED = 3
+MOVE_SPEED = 20
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
@@ -76,6 +76,50 @@ levels = {
                              ],
         "generator_coordinates": [(((32*7)+16)*3, ((32*1)+16)*3), (((32*13)+16)*3, ((32*17)+16)*3), (((32*24)+16)*3, ((32*24)+16)*3)],
         "required_generators": 3,
+        "objective": "Activate Generators"
+    },
+    4: {
+        "map": "data/maps/map4.json",
+        "sanity_drain": 0.05,
+        "monster_radius": 300,
+        "monsters": 2,
+        "world_border": [800*3, 800*3],
+        "spawn_point": (((32*2)+16)*3, ((32*6)+16)*3),
+        "monster_spawn": (32*3, 32*3),
+        "tree_coordinates": [(((32*0)+16)*3, ((32*13)+16)*3), (((32*0)+16)*3, ((32*16)+16)*3), (((32*2)+16)*3, ((32*17)+16)*3), (((32*2)+16)*3, ((32*20)+16)*3),
+                             (((32*2)+16)*3, ((32*23)+16)*3), (((32*7)+16)*3, ((32*7)+16)*3), (((32*7)+16)*3, ((32*9)+16)*3), (((32*7)+16)*3, ((32*11)+16)*3),
+                             (((32*8)+16)*3, ((32*17)+16)*3), (((32*8)+16)*3, ((32*20)+16)*3), (((32*8)+16)*3, ((32*23)+16)*3),
+                             (((32*9)+16)*3, ((32*1)+16)*3), (((32*15)+16)*3, ((32*1)+16)*3), (((32*17)+16)*3, ((32*7)+16)*3),
+                             (((32*17)+16)*3, ((32*9)+16)*3)],
+        "generator_coordinates": [(((32*23)+16)*3, ((32*22)+16)*3)],
+        "required_generators": 4,
+        "objective": "Activate Generators"
+    },
+    5: {
+        "map": "data/maps/map5.json",
+        "sanity_drain": 0.05,
+        "monster_radius": 300,
+        "monsters": 3,
+        "world_border": [960*3, 960*3],
+        "spawn_point": (((32*14)+16)*3, ((32*0)+16)*3),
+        "monster_spawn": (32*3, 32*3),
+        "tree_coordinates": [],
+        "generator_coordinates": [(((32*2)+16)*3, ((32*4)+16)*3), (((32*24)+16)*3, ((32*10)+16)*3), (((32*11)+16)*3, ((32*12)+16)*3), (((32*1)+16)*3, ((32*26)+16)*3),
+                                  (((32*27)+16)*3, ((32*26)+16)*3)],
+        "required_generators": 5,
+        "objective": "Activate Generators"
+    },
+    6: {
+        "map": "data/maps/map6.json",
+        "sanity_drain": 0.05,
+        "monster_radius": 300,
+        "monsters": 3,
+        "world_border": [960*3, 960*3],
+        "spawn_point": (((32*14)+16)*3, ((32*2)+16)*3),
+        "monster_spawn": (32*3, 32*3),
+        "tree_coordinates": [],
+        "generator_coordinates": [],
+        "required_generators": 1,
         "objective": "Activate Generators"
     }
 }
@@ -213,9 +257,10 @@ class MyGame(arcade.Window):
         self.generators_complete = False
         
         #Set up environment info
-        self.level_num = 3
+        self.level_num = 6
         self.sanity_color = arcade.color.GREEN
         self.fade_opacity = 0
+        self.disable_monster = False
         
         #True / False
         self.inventory_open = False
@@ -274,11 +319,14 @@ class MyGame(arcade.Window):
         self.tile_map = None
         self.tile_list = None
         self.object_list = None
+        self.killblock_list = None
+        self.sky_list = None
         self.generators_complete = False
         self.generator_count = 0
 
         #Reset old Map Variables
         self.fade_opacity = 0
+        self.sanity = 100
 
         #Empty old sprite lists
         self.bullet_list = arcade.SpriteList()
@@ -318,13 +366,20 @@ class MyGame(arcade.Window):
         #Load Map
         self.tile_map = arcade.load_tilemap(self.level_data["map"], scaling=3)
         self.tile_list = self.tile_map.sprite_lists["Ground"]
-        #TRY EXCEPT FOR THE OBJECT LAYER
         try:
             self.object_list = self.tile_map.sprite_lists["Object"]
             self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.object_list)
         except:
             self.object_list = None
             self.physics_engine = None
+        try:
+            self.killblock_list = self.tile_map.sprite_lists["Killblock"]
+        except:
+            self.killblock_list = None
+        try:
+            self.sky_list = self.tile_map.sprite_lists["Sky"]
+        except:
+            self.sky_list = None
 
 
     def close(self):
@@ -472,7 +527,11 @@ class MyGame(arcade.Window):
             self.tile_list.draw()
             self.tree_list.draw()
             if self.object_list != None:
-                self.object_list.draw()                
+                self.object_list.draw()
+            if self.killblock_list != None:
+                self.killblock_list.draw()
+            if self.sky_list != None:
+                self.sky_list.draw()
             self.generator_list.draw()
             self.monster_list.draw()
             self.player_list.draw()
