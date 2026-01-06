@@ -8,8 +8,7 @@ from arcade.experimental.lights import Light, LightLayer
 
 # --- Constants ---
 CAMERA_SPEED = 0.1
-#MONSTER_RADIUS = 300
-MOVE_SPEED = 20
+disable_monster = False
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
@@ -32,7 +31,10 @@ levels = {
                              (272*3, 16*3), (272*3, 208*3)],
         "generator_coordinates": [[144*3, 176*3]],
         "required_generators": 1,
-        "objective": "Activate Generators"
+        "objective": "Activate Generators",
+        "line1": "I just need some air.",
+        "line2": "I’ll come back once my head clears."
+        
     },
     2: {
         "map": "data/maps/map2.json",
@@ -54,7 +56,9 @@ levels = {
                              ],
         "generator_coordinates": [(((32*17)+16)*3, ((32*9)+16)*3), (((32*2)+16)*3, ((32*17)+16)*3)],
         "required_generators": 2,
-        "objective": "Activate Generators"
+        "objective": "Activate Generators",
+        "line1": "The woods are quieter than I remember.",
+        "line2": "No one else is here… it’s just me, again."
     },
     3: {
         "map": "data/maps/map3.json",
@@ -76,7 +80,9 @@ levels = {
                              ],
         "generator_coordinates": [(((32*7)+16)*3, ((32*1)+16)*3), (((32*13)+16)*3, ((32*17)+16)*3), (((32*24)+16)*3, ((32*24)+16)*3)],
         "required_generators": 3,
-        "objective": "Activate Generators"
+        "objective": "Activate Generators",
+        "line1": "Everyone left in a hurry.",
+        "line2": "I hoped I’d never walk these streets alone."
     },
     4: {
         "map": "data/maps/map4.json",
@@ -93,7 +99,9 @@ levels = {
                              (((32*17)+16)*3, ((32*9)+16)*3)],
         "generator_coordinates": [(((32*23)+16)*3, ((32*22)+16)*3)],
         "required_generators": 4,
-        "objective": "Activate Generators"
+        "objective": "Activate Generators",
+        "line1": "We tried to lock it away.",
+        "line2": "I recognize the access codes… they haven’t changed."
     },
     5: {
         "map": "data/maps/map5.json",
@@ -107,7 +115,9 @@ levels = {
         "generator_coordinates": [(((32*2)+16)*3, ((32*4)+16)*3), (((32*24)+16)*3, ((32*10)+16)*3), (((32*11)+16)*3, ((32*12)+16)*3), (((32*1)+16)*3, ((32*26)+16)*3),
                                   (((32*27)+16)*3, ((32*26)+16)*3)],
         "required_generators": 5,
-        "objective": "Activate Generators"
+        "objective": "Activate Generators",
+        "line1": "We knew it wouldn’t stay dormant forever.",
+        "line2": "I just didn’t think I’d be the one left."
     },
     6: {
         "map": "data/maps/map6.json",
@@ -120,7 +130,9 @@ levels = {
         "tree_coordinates": [],
         "generator_coordinates": [],
         "required_generators": 1,
-        "objective": "Activate Generators"
+        "objective": "Resume Containment Protocol",
+        "line1": "This is where it started.",
+        "line2": "This is where it ends."
     }
 }
 
@@ -141,21 +153,77 @@ class Monster(arcade.Sprite):
         self.target_exists = False
         self.monster_speed = 3
         self.target_store = []
+        self.targeting_player = False
 
         self.delay = 0
         self.delay_max = 0
 
         self.level_data = level_data
 
+    def stun(self):
+        pass
+
     def look_for_point(self):
         x = random.randrange(self.level_data["world_border"][0])
         y = random.randrange(self.level_data["world_border"][1])
         return x, y
     
+    def attack(self):
+
+        if self.stationary_shot == False and self.target_exists == False:
+            if self.delay > 0:
+                self.delay -= 1
+                self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=0, y=0, width=32, height=32)
+                return
+
+            target_point = PLAYER_POS
+            self.target_store = target_point
+            self.target_exists = True
+
+        if self.target_exists == True:
+            dist = math.dist([self.center_x, self.center_y], self.target_store)
+            if dist <= 10:
+                self.change_x = 0
+                self.change_y = 0
+                self.target_exists = False
+
+                self.delay_max = random.randint(30, 120)
+                self.delay = self.delay_max
+                return
+            else:
+                #Distance comes from subtraction -> (+): Positive Distance, (-): Negative Distance. Always (Target - Current)
+                direction_x = (self.target_store[0] - self.center_x)
+                direction_y = (self.target_store[1] - self.center_y)
+
+                direction_x /= dist
+                direction_y /= dist
+
+                self.change_x = direction_x 
+                self.change_y = direction_y 
+
+                self.center_x += self.change_x
+                self.center_y += self.change_y
+
+        if self.change_x > 0:
+            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=64, y=0, width=32, height=32)
+        elif self.change_x < 0:
+            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=32, y=0, width=32, height=32)
+        
+    
     def update(self):
         """Minecraft mob type movement. Find random [x,y] value, and once at the position, generate a new point to move to."""
 
-        if self.stationary_shot == False and self.target_exists == False:
+        pm_dist = math.dist([self.center_x, self.center_y], PLAYER_POS)
+        if pm_dist <= 300:
+            self.targeting_player = True
+        else:
+            self.targeting_player = False
+
+        if self.targeting_player == True:
+            self.target_exists = False
+            self.attack()
+
+        if self.stationary_shot == False and self.target_exists == False and self.targeting_player == False:
             if self.delay > 0:
                 self.delay -= 1
                 self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=0, y=0, width=32, height=32)
@@ -201,10 +269,10 @@ class Monster(arcade.Sprite):
         #print(monster_distance)
         if monster_distance  <= MONSTER_RADIUS:
             enable_tracking = True
-            in_radius = True
+            #in_radius = True
         else:
             enable_tracking = False
-            in_radius = False
+            #in_radius = False
 
     def get_distance(self, coor):
         dist = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
@@ -255,12 +323,16 @@ class MyGame(arcade.Window):
         #Set up the player info
         self.player_sprite = None
         self.generators_complete = False
-        
+        self.lives = 3
+        self.sprint = False
+        self.move_speed = 0
+        self.sprint_speed = 8
+        self.walk_speed = 20
+
         #Set up environment info
         self.level_num = 6
         self.sanity_color = arcade.color.GREEN
         self.fade_opacity = 0
-        self.disable_monster = False
         
         #True / False
         self.inventory_open = False
@@ -270,8 +342,7 @@ class MyGame(arcade.Window):
         self.right_pressed = False
         self.debug = False
         self.show_sanity = True
-        self.show_objective = True
-        self.fading_screen = False
+        self.show_hud = True
         global in_radius
         in_radius = False
         
@@ -283,6 +354,7 @@ class MyGame(arcade.Window):
         self.cam_zoom = .5
         self.rate_of_consumption = 0
         self.generator_count = 0
+        self.damage_cooldown = 0
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -305,8 +377,22 @@ class MyGame(arcade.Window):
         #Audio Players
         self.heartbeat_playing = False
         self.heartbeat_player = None
+
         #BGM Player
         #self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
+
+        #Dialogue Flags
+        self.fading_screen = False
+        self.dialogue_playing = False
+        self.dialogue_timer = 0
+        self.stage = 0
+        self.dialogue_active = False
+
+        self.play_line1 = False
+        self.play_line2 = False
+
+        self.voice1_played = False
+        self.voice2_played = False
 
     def load_level(self):
         global MONSTER_RADIUS
@@ -462,7 +548,7 @@ class MyGame(arcade.Window):
             arcade.draw_text(f"Speed Restore: T1: {self.inventory_dict['speed_1']}, T2: {self.inventory_dict['speed_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/3, arcade.color.WHITE, 24)
             
             arcade.draw_text(f"Score: {self.score}", 10, 10, arcade.color.WHITE, 24)
-            arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
+            #arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
             arcade.draw_text(f"Sanity: {self.sanity_initial}", 10, 90, arcade.color.WHITE, 24)
 
         #Draw Debug menu
@@ -470,7 +556,7 @@ class MyGame(arcade.Window):
             self.show_sanity = False
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
             arcade.draw_text(f"Monster Radius: {MONSTER_RADIUS}", 10, SCREEN_HEIGHT-80, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Move Speed: {MOVE_SPEED}", 10, SCREEN_HEIGHT-110, arcade.color.WHITE, 24)
+            arcade.draw_text(f"Move Speed: {self.move_speed}", 10, SCREEN_HEIGHT-110, arcade.color.WHITE, 24)
         
         #Draw Sanity
         if self.show_sanity == True:
@@ -490,31 +576,45 @@ class MyGame(arcade.Window):
             arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
 
         #Draw Objective
-        if self.show_objective:
-             margin = 5
-             arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
+        if self.show_hud:
+            margin = 5
+            arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
                               margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
+            arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
+            arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+10, 9, arcade.color.BLUE, bold=True)
 
         #Draw Alert bar
-        if in_radius == True:
-            for monster in self.monster_list:
-                dist = monster.get_distance(PLAYER_POS)
-                if dist <= 450:
-                    # when dist = 200: opacity = 0
-                    opacity = abs(dist - 450) / 450 
-                    color1 = (136, 8, 8, int(255 * opacity))
-                else:
-                    color1 = (136, 8, 8, 0)
-            color2 = (136, 8, 8, 0)
-            points = (0, SCREEN_HEIGHT-200), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT-200)
-            colors = (color2, color1, color1, color2)
-            rect = arcade.create_rectangle_filled_with_colors(points, colors)
-            self.shapes.append(rect)
-            self.shapes.draw()
+        closest_dist = math.inf
+        for i, monster in enumerate(self.monster_list):
+            dist = monster.get_distance(PLAYER_POS)
+            if dist < closest_dist:
+                closest_dist = dist
+        
+        if closest_dist <= 450:
+            opacity = 1 - (closest_dist / 450)
+        else:
+            opacity = 0
+            
+        color1 = (136, 8, 8, int(255 * opacity))
+        color2 = (136, 8, 8, 0)
+        points = (0, SCREEN_HEIGHT-200), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT-200)
+        colors = (color2, color1, color1, color2)
+        rect = arcade.create_rectangle_filled_with_colors(points, colors)
+        self.shapes.append(rect)
+        self.shapes.draw()
+
+        #Draw Generator Interact Prompt
+        for generator in self.generator_list:
+            if generator.interactable == True:
+                arcade.draw_text("Press 'E' to interact with Generator", (SCREEN_WIDTH/2)-180, (SCREEN_HEIGHT/2)-150, (255, 255, 255), 17, bold=True)
 
         #Draw Fade to black
         if self.fading_screen == True:
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, self.fade_opacity))
+        if self.play_line1 == True:
+            arcade.draw_text(self.level_data["line1"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2+25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
+        if self.play_line2 == True:
+            arcade.draw_text(self.level_data["line2"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2-25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
 
 
     def on_draw(self):
@@ -552,18 +652,23 @@ class MyGame(arcade.Window):
     def update(self, delta_time):
         """Movement and game logic"""
         self.player_list.update_animation()
-        global PLAYER_POS, MONSTER_RADIUS, MOVE_SPEED
+        global PLAYER_POS, MONSTER_RADIUS
         PLAYER_POS = self.player_sprite.position
     
         if self.object_list != None:
             self.physics_engine.update()
+
+        if self.sprint == True:
+            self.move_speed = self.sprint_speed
+        else:
+            self.move_speed = self.walk_speed
 
         #Sanity Decrease and Effects
         self.sanity -= 0.05 * (delta_time/2)
         if self.sanity <= 0:
             MONSTER_RADIUS = 1000
         elif self.sanity <= 20:
-            MOVE_SPEED = 1
+            self.move_speed = 1
         elif self.sanity <= 30: #Distorted Vision
             self.sanity_color = arcade.color.RED
         elif self.sanity <= 60: #Monster Radius Increase & Audio Hallucinations
@@ -600,9 +705,14 @@ class MyGame(arcade.Window):
             monster.calc_radius(PLAYER_POS)        
 
         self.monster_list.update()
-        monster_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.monster_list)
-        for i in monster_hit_list:
-            self.score+=1
+
+        self.damage_cooldown -= delta_time
+
+        if self.damage_cooldown <= 0:
+            monster_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.monster_list)
+            for i in monster_hit_list:
+                self.lives-=1
+                self.damage_cooldown = 5
 
         #Generator Update
         for generator in self.generator_list:
@@ -623,15 +733,53 @@ class MyGame(arcade.Window):
                 self.heartbeat_player.pause()
                 self.heartbeat_playing = False  
         
-        if self.generator_count == self.level_data["required_generators"]:
+        if self.generator_count == self.level_data["required_generators"] and self.dialogue_playing == False:
             self.fading_screen = True
+            self.dialogue_playing = True
+            self.dialogue_active = True
+            self.dialogue_timer = 0
+            self.stage = 0
 
-        if self.fading_screen == True:
-            self.fade_opacity += 2.5
-            if self.fade_opacity >= 255:
-                self.fade_opacity = 255
+        if self.dialogue_active == True:
+            self.dialogue_timer += delta_time
+            if self.stage == 0:
+                self.fade_opacity += 180 * delta_time
+                if self.fade_opacity >= 255:
+                    self.stage = 1
+                    self.dialogue_timer = 0
+
+            elif self.stage == 1:
+                if self.dialogue_timer > 0.5:
+                    self.play_line1 = True
+                    self.voice1_played = True
+
+                if self.dialogue_timer > 2.5:
+                    self.stage = 2
+                    self.dialogue_timer = 0
+            
+            elif self.stage == 2:
+                if self.dialogue_timer > 0.5:
+                    self.play_line2 = True
+                    self.voice2_played = True
+                
+                if self.dialogue_timer > 3:
+                    self.stage = 3
+                    self.dialogue_timer = 0
+
+            elif self.stage == 3:
                 self.fading_screen = False
+                self.dialogue_playing = False
+                self.dialogue_timer = 0
+                self.stage = 0
+                self.dialogue_active = False
+                self.play_line1 = False
+                self.play_line2 = False
+
+                self.voice1_played = False
+                self.voice2_played = False
+
                 self.level_transfer()
+
 
         self.scroll_to_player()
 
@@ -691,7 +839,7 @@ class MyGame(arcade.Window):
         
         #Movement Keys (W, A, S, D)
         elif key == arcade.key.W:
-            self.player_sprite.change_y = MOVE_SPEED
+            self.player_sprite.change_y = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 32, width = 32, height = 32)
@@ -699,7 +847,7 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.S:
-            self.player_sprite.change_y = -MOVE_SPEED
+            self.player_sprite.change_y = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 0, width = 32, height = 32)
@@ -707,7 +855,7 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.D:
-            self.player_sprite.change_x = MOVE_SPEED
+            self.player_sprite.change_x = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 96, width = 32, height = 32)
@@ -715,12 +863,15 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.A:
-            self.player_sprite.change_x = -MOVE_SPEED
+            self.player_sprite.change_x = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 64, width = 32, height = 32)
                 anim = arcade.AnimationKeyframe(i,250,texture)
                 self.player_sprite.frames.append(anim)
+        
+        elif key == arcade.key.LSHIFT:
+            self.sprint = True
         
         #Generator Interactivity Key
         elif key == arcade.key.E:
@@ -765,7 +916,7 @@ class MyGame(arcade.Window):
             self.bullet_list.append(bullet_sprite)
 
         #Command Prompt
-        elif key == arcade.key.T:
+        elif key == arcade.key.COLON:
             self.commands()
              
     def on_key_release(self, key, modifiers):
@@ -809,7 +960,10 @@ class MyGame(arcade.Window):
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = 0, y = 64, width = 32, height = 32)
                 anim = arcade.AnimationKeyframe(i,10,texture)
-                self.player_sprite.frames.append(anim)            
+                self.player_sprite.frames.append(anim)    
+
+        elif key == arcade.key.LSHIFT:
+            self.sprint = False        
 
 def main():
     """Main Method"""

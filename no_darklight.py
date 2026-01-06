@@ -4,7 +4,7 @@ import math
 
 
 # --- Constants ---
-MOVE_SPEED = 10
+self.move_speed = 10
 
 SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 
@@ -316,7 +316,7 @@ class MyGame(arcade.Window):
         
         #Movement Keys (W, A, S, D)
         elif key == arcade.key.W:
-            self.player_sprite.change_y = MOVE_SPEED
+            self.player_sprite.change_y = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 32, width = 32, height = 32)
@@ -324,7 +324,7 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.S:
-            self.player_sprite.change_y = -MOVE_SPEED
+            self.player_sprite.change_y = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 0, width = 32, height = 32)
@@ -332,7 +332,7 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.D:
-            self.player_sprite.change_x = MOVE_SPEED
+            self.player_sprite.change_x = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 96, width = 32, height = 32)
@@ -340,7 +340,7 @@ class MyGame(arcade.Window):
                 self.player_sprite.frames.append(anim)
                 
         elif key == arcade.key.A:
-            self.player_sprite.change_x = -MOVE_SPEED
+            self.player_sprite.change_x = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
                 texture = arcade.load_texture("data/sprites/sprite.png", x = i * 32, y = 64, width = 32, height = 32)
