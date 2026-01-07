@@ -31,9 +31,11 @@ levels = {
                              (272*3, 16*3), (272*3, 208*3)],
         "generator_coordinates": [[144*3, 176*3]],
         "required_generators": 1,
+        "required_keys": 0,
+        "gun_enabled": False,
         "objective": "Activate Generators",
-        "line1": "I just need some air.",
-        "line2": "I’ll come back once my head clears."
+        "line1": "The woods are quieter than I remember.",
+        "line2": "No one else is here… it’s just me, again."
         
     },
     2: {
@@ -56,9 +58,11 @@ levels = {
                              ],
         "generator_coordinates": [(((32*17)+16)*3, ((32*9)+16)*3), (((32*2)+16)*3, ((32*17)+16)*3)],
         "required_generators": 2,
+        "required_keys": 0,
+        "gun_enabled": False,
         "objective": "Activate Generators",
-        "line1": "The woods are quieter than I remember.",
-        "line2": "No one else is here… it’s just me, again."
+        "line1": "Everyone left in a hurry.",
+        "line2": "I hoped I’d never walk these streets alone."
     },
     3: {
         "map": "data/maps/map3.json",
@@ -80,9 +84,11 @@ levels = {
                              ],
         "generator_coordinates": [(((32*7)+16)*3, ((32*1)+16)*3), (((32*13)+16)*3, ((32*17)+16)*3), (((32*24)+16)*3, ((32*24)+16)*3)],
         "required_generators": 3,
+        "required_keys": 0,
+        "gun_enabled": False,
         "objective": "Activate Generators",
-        "line1": "Everyone left in a hurry.",
-        "line2": "I hoped I’d never walk these streets alone."
+        "line1": "I recognize the access codes… they haven’t changed.",
+        "line2": "This gun... I'll use it to protect myself."
     },
     4: {
         "map": "data/maps/map4.json",
@@ -99,9 +105,11 @@ levels = {
                              (((32*17)+16)*3, ((32*9)+16)*3)],
         "generator_coordinates": [(((32*23)+16)*3, ((32*22)+16)*3)],
         "required_generators": 4,
+        "required_keys": 0,
+        "gun_enabled": True,
         "objective": "Activate Generators",
-        "line1": "We tried to lock it away.",
-        "line2": "I recognize the access codes… they haven’t changed."
+        "line1": "We knew it wouldn’t stay dormant forever.",
+        "line2": "It'd be best not to touch the broken viles on the ground."
     },
     5: {
         "map": "data/maps/map5.json",
@@ -115,9 +123,11 @@ levels = {
         "generator_coordinates": [(((32*2)+16)*3, ((32*4)+16)*3), (((32*24)+16)*3, ((32*10)+16)*3), (((32*11)+16)*3, ((32*12)+16)*3), (((32*1)+16)*3, ((32*26)+16)*3),
                                   (((32*27)+16)*3, ((32*26)+16)*3)],
         "required_generators": 5,
+        "required_keys": 0,
+        "gun_enabled": True,
         "objective": "Activate Generators",
-        "line1": "We knew it wouldn’t stay dormant forever.",
-        "line2": "I just didn’t think I’d be the one left."
+        "line1": "This is where it started. This is where it ends.",
+        "line2": "I remember leaving keys around to unlock the door."
     },
     6: {
         "map": "data/maps/map6.json",
@@ -130,9 +140,11 @@ levels = {
         "tree_coordinates": [],
         "generator_coordinates": [],
         "required_generators": 1,
+        "required_keys": 2,
+        "gun_enabled": True,
         "objective": "Resume Containment Protocol",
-        "line1": "This is where it started.",
-        "line2": "This is where it ends."
+        "line1": "nil",
+        "line2": "nil"
     }
 }
 
@@ -158,10 +170,16 @@ class Monster(arcade.Sprite):
         self.delay = 0
         self.delay_max = 0
 
+        self.stun_timer = 0
+
         self.level_data = level_data
 
-    def stun(self):
-        pass
+    def stun(self, duration=5):
+        self.stationary_shot = True
+        self.targeting_player = False
+        self.target_exists = False
+        self.stun_duration = duration
+
 
     def look_for_point(self):
         x = random.randrange(self.level_data["world_border"][0])
@@ -212,6 +230,12 @@ class Monster(arcade.Sprite):
     
     def update(self):
         """Minecraft mob type movement. Find random [x,y] value, and once at the position, generate a new point to move to."""
+
+        if self.stationary_shot:
+            self.stun_duration -= 1/60
+            if self.stun_duration <= 0:
+                self.stationary_shot = False
+                self.stun_duration = 0
 
         pm_dist = math.dist([self.center_x, self.center_y], PLAYER_POS)
         if pm_dist <= 300:
@@ -330,7 +354,7 @@ class MyGame(arcade.Window):
         self.walk_speed = 20
 
         #Set up environment info
-        self.level_num = 6
+        self.level_num = 4
         self.sanity_color = arcade.color.GREEN
         self.fade_opacity = 0
         
@@ -343,6 +367,7 @@ class MyGame(arcade.Window):
         self.debug = False
         self.show_sanity = True
         self.show_hud = True
+        self.key_exists = False
         global in_radius
         in_radius = False
         
@@ -355,6 +380,8 @@ class MyGame(arcade.Window):
         self.rate_of_consumption = 0
         self.generator_count = 0
         self.damage_cooldown = 0
+        self.key_inventory = 0
+        self.gun_cooldown = 0
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -402,17 +429,22 @@ class MyGame(arcade.Window):
         self.level_data = levels[self.level]
 
         #Reset Maps
+        self.wall_list = arcade.SpriteList()
         self.tile_map = None
         self.tile_list = None
         self.object_list = None
         self.killblock_list = None
         self.sky_list = None
+        self.door_list = None
+        self.key_list = None
+        self.key_exists = False
         self.generators_complete = False
-        self.generator_count = 0
 
         #Reset old Map Variables
         self.fade_opacity = 0
         self.sanity = 100
+        self.generator_count = 0
+        self.key_inventory = 0
 
         #Empty old sprite lists
         self.bullet_list = arcade.SpriteList()
@@ -454,10 +486,14 @@ class MyGame(arcade.Window):
         self.tile_list = self.tile_map.sprite_lists["Ground"]
         try:
             self.object_list = self.tile_map.sprite_lists["Object"]
-            self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.object_list)
+            self.wall_list.extend(self.object_list)
         except:
             self.object_list = None
-            self.physics_engine = None
+        try:
+            self.door_list = self.tile_map.sprite_lists["Door"]
+            self.wall_list.extend(self.door_list)
+        except:
+            self.door_list = None
         try:
             self.killblock_list = self.tile_map.sprite_lists["Killblock"]
         except:
@@ -466,7 +502,16 @@ class MyGame(arcade.Window):
             self.sky_list = self.tile_map.sprite_lists["Sky"]
         except:
             self.sky_list = None
-
+        try:
+            self.key_list = self.tile_map.sprite_lists["Key"]
+            self.key_exists = True
+        except:
+            self.key_list = None
+        
+        try:
+            self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+        except:
+            self.physics_engine = None
 
     def close(self):
         """Close the Window and stop background music"""
@@ -494,8 +539,8 @@ class MyGame(arcade.Window):
         #     "speed_1": 0,
         #     "health_2": 0,
         #     "sanity_2": 0,
-        #     "speed_2": 0,}            
-        
+        #     "speed_2": 0,}    
+                
     def coordinate_generate(self):
             x = random.randrange(self.level_data["world_border"][0])
             y = random.randrange(self.level_data["world_border"][1])            
@@ -546,6 +591,7 @@ class MyGame(arcade.Window):
             arcade.draw_text(f"Health Restore: T1: {self.inventory_dict['health_1']}, T2: {self.inventory_dict['health_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2, arcade.color.WHITE, 24)
             arcade.draw_text(f"Sanity Restore: T1: {self.inventory_dict['sanity_1']}, T2: {self.inventory_dict['sanity_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2.5, arcade.color.WHITE, 24)
             arcade.draw_text(f"Speed Restore: T1: {self.inventory_dict['speed_1']}, T2: {self.inventory_dict['speed_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/3, arcade.color.WHITE, 24)
+            arcade.draw_text(f"Keys: {self.key_inventory}", SCREEN_WIDTH/4, SCREEN_HEIGHT/4, arcade.color.WHITE, 24)
             
             arcade.draw_text(f"Score: {self.score}", 10, 10, arcade.color.WHITE, 24)
             #arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
@@ -575,13 +621,15 @@ class MyGame(arcade.Window):
             arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
             arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
 
-        #Draw Objective
+        #Draw HUD
         if self.show_hud:
             margin = 5
             arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
                               margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
             arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
-            arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+10, 9, arcade.color.BLUE, bold=True)
+            arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 32, arcade.color.BLUE, bold=True)
+
+            arcade.draw_text(f"Gun Cooldown : {self.gun_cooldown:.1f}", meter_width+10, 8, arcade.color.WHITE, 17)
 
         #Draw Alert bar
         closest_dist = math.inf
@@ -626,12 +674,14 @@ class MyGame(arcade.Window):
             #arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (42, 59, 36))  
             self.tile_list.draw()
             self.tree_list.draw()
-            if self.object_list != None:
-                self.object_list.draw()
             if self.killblock_list != None:
                 self.killblock_list.draw()
             if self.sky_list != None:
                 self.sky_list.draw()
+            if self.key_list != None:
+                self.key_list.draw()
+            if self.wall_list != None:
+                self.wall_list.draw()
             self.generator_list.draw()
             self.monster_list.draw()
             self.player_list.draw()
@@ -655,7 +705,7 @@ class MyGame(arcade.Window):
         global PLAYER_POS, MONSTER_RADIUS
         PLAYER_POS = self.player_sprite.position
     
-        if self.object_list != None:
+        if self.wall_list != None:
             self.physics_engine.update()
 
         if self.sprint == True:
@@ -676,6 +726,22 @@ class MyGame(arcade.Window):
         elif self.sanity <= 100: #Hallucinations 
             self.sanity_color = arcade.color.GREEN
 
+        #Key Update
+        if self.key_exists == True:
+            key_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.key_list)
+            for key in key_hit_list:
+                key.remove_from_sprite_lists()
+                self.key_inventory += 1
+
+            if self.key_inventory == self.level_data["required_keys"]:
+                for door in self.door_list:
+                    door.remove_from_sprite_lists()
+                    if door in self.wall_list:
+                        self.wall_list.remove(door)
+
+                self.door_list = arcade.SpriteList()
+
+                self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
         #Light Update
         self.player_light.position = (self.player_sprite.center_x,
                               self.player_sprite.center_y)
@@ -698,7 +764,16 @@ class MyGame(arcade.Window):
             self.angle -= 0.1
         elif self.right_pressed:
             self.angle += 0.1      
-        self.bullet_list.update()  
+        self.bullet_list.update()
+
+        if self.gun_cooldown >= 0:
+            self.gun_cooldown = max(0, self.gun_cooldown - delta_time)
+        
+        for bullet in self.bullet_list:
+            bullet_hit_list = arcade.check_for_collision_with_list(bullet, self.monster_list)
+            for monster in bullet_hit_list:
+                monster.stun()
+                
 
         #Monster Update
         for monster in self.monster_list:
@@ -900,20 +975,24 @@ class MyGame(arcade.Window):
         
         #Shooting
         elif key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(
-                ":resources:images/space_shooter/laserBlue01.png", scale=1
-            )
-            # Set starting position at player
-            bullet_sprite.center_x = self.player_sprite.center_x
-            bullet_sprite.center_y = self.player_sprite.center_y
+            if self.level_data["gun_enabled"] == True and self.gun_cooldown <= 0:
+                texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=32, y=32, width=32, height=32)
+                bullet_sprite = arcade.Sprite(texture=texture, scale=2)
 
-            # Set velocity using angle (no player coordinates here)
-            bullet_speed = 10
-            bullet_sprite.change_x = bullet_speed * math.sin(self.angle)
-            bullet_sprite.change_y = bullet_speed * math.cos(self.angle)
+                # Set starting position at player
+                bullet_sprite.center_x = self.player_sprite.center_x
+                bullet_sprite.center_y = self.player_sprite.center_y
 
-            # Add to bullet list
-            self.bullet_list.append(bullet_sprite)
+                # Set velocity using angle (no player coordinates here)
+                bullet_speed = 10  
+                bullet_sprite.change_x = bullet_speed * math.sin(self.angle)
+                bullet_sprite.change_y = bullet_speed * math.cos(self.angle)
+                bullet_sprite.angle = -math.degrees(self.angle)
+
+
+                # Add to bullet list
+                self.bullet_list.append(bullet_sprite)
+                self.gun_cooldown = 7
 
         #Command Prompt
         elif key == arcade.key.COLON:
