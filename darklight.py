@@ -97,13 +97,13 @@ levels = {
         "monsters": 2,
         "world_border": [800*3, 800*3],
         "spawn_point": (((32*2)+16)*3, ((32*6)+16)*3),
-        "monster_spawn": (32*3, 32*3),
+        "monster_spawn": (0, 800*3),
         "tree_coordinates": [(((32*0)+16)*3, ((32*13)+16)*3), (((32*0)+16)*3, ((32*16)+16)*3), (((32*2)+16)*3, ((32*17)+16)*3), (((32*2)+16)*3, ((32*20)+16)*3),
                              (((32*2)+16)*3, ((32*23)+16)*3), (((32*7)+16)*3, ((32*7)+16)*3), (((32*7)+16)*3, ((32*9)+16)*3), (((32*7)+16)*3, ((32*11)+16)*3),
                              (((32*8)+16)*3, ((32*17)+16)*3), (((32*8)+16)*3, ((32*20)+16)*3), (((32*8)+16)*3, ((32*23)+16)*3),
                              (((32*9)+16)*3, ((32*1)+16)*3), (((32*15)+16)*3, ((32*1)+16)*3), (((32*17)+16)*3, ((32*7)+16)*3),
                              (((32*17)+16)*3, ((32*9)+16)*3)],
-        "generator_coordinates": [(((32*23)+16)*3, ((32*22)+16)*3)],
+        "generator_coordinates": [(((32*23)+16)*3, ((32*22)+16)*3), (((32*1)+16)*3, ((32*1)+16)*3), (((32*1)+16)*3, 2000), (((32*8)+16)*3, ((32*7)+16)*3)],
         "required_generators": 4,
         "required_keys": 0,
         "gun_enabled": True,
@@ -174,7 +174,7 @@ class Monster(arcade.Sprite):
 
         self.level_data = level_data
 
-    def stun(self, duration=5):
+    def stun(self, duration=10):
         self.stationary_shot = True
         self.targeting_player = False
         self.target_exists = False
@@ -352,6 +352,7 @@ class MyGame(arcade.Window):
         self.move_speed = 0
         self.sprint_speed = 8
         self.walk_speed = 20
+        self.game_state = "TITLE"
 
         #Set up environment info
         self.level_num = 4
@@ -517,29 +518,9 @@ class MyGame(arcade.Window):
         """Close the Window and stop background music"""
         super().close()
 
+
     def setup(self):
-        pass
-        # """Set up the game and initialize the variables."""
-        # #Sprite Lists
-        # self.player_list = arcade.SpriteList()
-        # self.player_sprite = arcade.AnimatedTimeBasedSprite()
-        # base_texture = arcade.load_texture("data/sprites/sprite.png", x=0, y=0, width=32, height=32)
-        # self.player_sprite.texture = base_texture
-        # anim = arcade.AnimationKeyframe(1,10,base_texture)
-        # self.player_sprite.frames.append(anim)
-        
-        # #Set up the player
-        # self.player_sprite.center_x = 50
-        # self.player_sprite.center_y = 64
-        # self.player_list.append(self.player_sprite)
-        # print("PLAYER SPAWNED AT:", self.player_sprite.center_x, self.player_sprite.center_y)
-        # self.inventory_dict = {
-        #     "health_1": 0,
-        #     "sanity_1": 0,
-        #     "speed_1": 0,
-        #     "health_2": 0,
-        #     "sanity_2": 0,
-        #     "speed_2": 0,}    
+        pass  
                 
     def coordinate_generate(self):
             x = random.randrange(self.level_data["world_border"][0])
