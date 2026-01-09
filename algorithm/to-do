@@ -4,9 +4,8 @@
 - item spawning
 - map
 
-- title screen
-- death
-- game over or restart from same level options
+- gameover
+- boss?
 
 
 - add stuff to debug menu:
@@ -15,7 +14,7 @@
 - adjusting:
 - 
 
-- level transition text + voiceover
+- level transition text + voiceover?
 
 - 1: “I just need some air.” “I’ll come back once my head clears.”
 - 2: “The woods are quieter than I remember.” “No one else is here… it’s just me, again.”

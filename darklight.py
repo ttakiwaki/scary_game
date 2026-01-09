@@ -1,8 +1,15 @@
-"""Scary Game"""
+"""
+Scary Game
+
+A top-down survival horror game built with Arcade.
+Includes monsters, generators, sanity mechanics.
+"""
 
 import random
 import arcade
 import math
+import time
+import json
 from pyglet.math import Vec2
 from arcade.experimental.lights import Light, LightLayer
 
@@ -15,7 +22,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = arcade.get_display_size()
 levels = {
     1: {
         "map": "data/maps/map1.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.006,
         "monster_radius": 300,
         "monsters": 0,
         "world_border": [288*3, 320*3],
@@ -40,7 +47,7 @@ levels = {
     },
     2: {
         "map": "data/maps/map2.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.0065,
         "monster_radius": 300,
         "monsters": 1,
         "world_border": [640*3, 640*3],
@@ -66,7 +73,7 @@ levels = {
     },
     3: {
         "map": "data/maps/map3.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.007,
         "monster_radius": 300,
         "monsters": 2,
         "world_border": [800*3, 800*3],
@@ -92,7 +99,7 @@ levels = {
     },
     4: {
         "map": "data/maps/map4.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.0075,
         "monster_radius": 300,
         "monsters": 2,
         "world_border": [800*3, 800*3],
@@ -113,7 +120,7 @@ levels = {
     },
     5: {
         "map": "data/maps/map5.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.008,
         "monster_radius": 300,
         "monsters": 3,
         "world_border": [960*3, 960*3],
@@ -131,22 +138,43 @@ levels = {
     },
     6: {
         "map": "data/maps/map6.json",
-        "sanity_drain": 0.05,
+        "sanity_drain": 0.0083,
         "monster_radius": 300,
         "monsters": 3,
-        "world_border": [960*3, 960*3],
+        "world_border": [288*3, 320*3],
         "spawn_point": (((32*14)+16)*3, ((32*2)+16)*3),
         "monster_spawn": (32*3, 32*3),
         "tree_coordinates": [],
-        "generator_coordinates": [],
+        "generator_coordinates": [(((32*14)+16)*3, ((32*2)+16)*3)],
         "required_generators": 1,
         "required_keys": 2,
         "gun_enabled": True,
         "objective": "Resume Containment Protocol",
+        "line1": "Containment is just a word we tell ourselves.",
+        "line2": "Some things don’t stay buried. They just wait."
+    },
+    7: {
+        "map": "data/maps/map1.json",
+        "sanity_drain": 0.05,
+        "monster_radius": 300,
+        "monsters": 0,
+        "world_border": [288*3, 320*3],
+        "spawn_point": [144*3, 16*3],
+        "monster_spawn": (),
+        "tree_coordinates": [],
+        "generator_coordinates": [],
+        "required_generators": 0,
+        "required_keys": 0,
+        "gun_enabled": False,
+        "objective": "nil",
         "line1": "nil",
         "line2": "nil"
     }
 }
+
+# --------------------------
+# --- Game Entities ---
+# --------------------------
 
 class Monster(arcade.Sprite):
     def __init__(self, texture, scale, center_x, center_y, change_x, change_y, level_data):
@@ -302,6 +330,9 @@ class Monster(arcade.Sprite):
         dist = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
         return dist
         
+class Boss_Monster(Monster):
+    pass
+
 class Generator(arcade.Sprite):
     def __init__(self, texture, scale, center_x, center_y):
         """Constructor"""
@@ -340,7 +371,7 @@ class MyGame(arcade.Window):
         #Variables that will hold sprite lists.
         self.player_list = None
         self.monster_list = None
-        self.tree_list = None
+        self.tree_list = None 
         self.generator_list = None
         self.bullet_list = arcade.SpriteList()
         
@@ -355,12 +386,14 @@ class MyGame(arcade.Window):
         self.game_state = "TITLE"
 
         #Set up environment info
-        self.level_num = 4
+        self.level_num = 1
         self.sanity_color = arcade.color.GREEN
         self.fade_opacity = 0
         
         #True / False
+        self.player_invulnerable = False
         self.inventory_open = False
+        self.controls = True
         self.enable_tracking = False
         self.gun_on = False
         self.left_pressed = False
@@ -383,6 +416,7 @@ class MyGame(arcade.Window):
         self.damage_cooldown = 0
         self.key_inventory = 0
         self.gun_cooldown = 0
+        self.set_gun_cooldown = 5
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -394,9 +428,6 @@ class MyGame(arcade.Window):
         self.light_layer.add(self.player_light)
         arcade.set_background_color(arcade.color.AMAZON)
 
-        #Call Rate of Consumption function
-        self.sanity_decrease()
-        self.sanity = self.sanity_initial
 
         #Audio
         self.bgm = arcade.load_sound("data/audio/bgm/06.There_In_Spirit.wav")
@@ -407,7 +438,7 @@ class MyGame(arcade.Window):
         self.heartbeat_player = None
 
         #BGM Player
-        #self.bgm_player = arcade.play_sound(self.bgm, volume=0.1, looping=True)
+        self.bgm_player = arcade.play_sound(self.bgm, volume=0.03, looping=True)
 
         #Dialogue Flags
         self.fading_screen = False
@@ -446,6 +477,7 @@ class MyGame(arcade.Window):
         self.sanity = 100
         self.generator_count = 0
         self.key_inventory = 0
+        self.lives = 3
 
         #Empty old sprite lists
         self.bullet_list = arcade.SpriteList()
@@ -482,6 +514,10 @@ class MyGame(arcade.Window):
             "sanity_2": 0,
             "speed_2": 0,}
         
+        #Call Rate of Consumption function
+        self.sanity_decrease()
+        self.sanity = self.sanity_initial
+
         #Load Map
         self.tile_map = arcade.load_tilemap(self.level_data["map"], scaling=3)
         self.tile_list = self.tile_map.sprite_lists["Ground"]
@@ -520,7 +556,7 @@ class MyGame(arcade.Window):
 
 
     def setup(self):
-        pass  
+        self.level = 0
                 
     def coordinate_generate(self):
             x = random.randrange(self.level_data["world_border"][0])
@@ -556,135 +592,186 @@ class MyGame(arcade.Window):
             self.generator_list.append(generator)
 
     def sanity_decrease(self):
-        decrease_factor = 1.3
-        self.rate_of_consumption = 1 * decrease_factor**(self.level_num-1)
+        decrease_factor = self.level_data["sanity_drain"]
+        self.rate_of_consumption = decrease_factor * (1.05 ** (self.level_num - 1))
+        self.rate_of_consumption = min(self.rate_of_consumption, 0.015)
         return self.rate_of_consumption
     
     def on_uidraw(self):
 
         self.shapes = arcade.ShapeElementList()
 
-        #Draw Inventory
-        if self.inventory_open == True:
-            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, arcade.color.BLACK)
-            arcade.draw_text("Inventory:", SCREEN_WIDTH/4, SCREEN_HEIGHT/1.5, arcade.color.WHITE, 24)
-            
-            arcade.draw_text(f"Health Restore: T1: {self.inventory_dict['health_1']}, T2: {self.inventory_dict['health_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Sanity Restore: T1: {self.inventory_dict['sanity_1']}, T2: {self.inventory_dict['sanity_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2.5, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Speed Restore: T1: {self.inventory_dict['speed_1']}, T2: {self.inventory_dict['speed_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/3, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Keys: {self.key_inventory}", SCREEN_WIDTH/4, SCREEN_HEIGHT/4, arcade.color.WHITE, 24)
-            
-            arcade.draw_text(f"Score: {self.score}", 10, 10, arcade.color.WHITE, 24)
-            #arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Sanity: {self.sanity_initial}", 10, 90, arcade.color.WHITE, 24)
-
-        #Draw Debug menu
-        if self.debug == True:
-            self.show_sanity = False
+        #Draw Title
+        if self.game_state == "TITLE":
+            margin = 5
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
-            arcade.draw_text(f"Monster Radius: {MONSTER_RADIUS}", 10, SCREEN_HEIGHT-80, arcade.color.WHITE, 24)
-            arcade.draw_text(f"Move Speed: {self.move_speed}", 10, SCREEN_HEIGHT-110, arcade.color.WHITE, 24)
-        
-        #Draw Sanity
-        if self.show_sanity == True:
-            #Draw Sanity Meter Outline
-            meter_width = SCREEN_WIDTH / 4
-            meter_height = SCREEN_HEIGHT / 25
-            margin = 5
-            center_x = meter_width / 2 + margin
-            center_y = meter_height / 2 + margin
-            arcade.draw_rectangle_filled(center_x, center_y, meter_width, meter_height, arcade.color.BLACK)
-            arcade.draw_rectangle_outline(center_x,center_y,meter_width, meter_height, arcade.color.WHITE, border_width=3)
+            arcade.draw_text("Scary Game", 100, SCREEN_HEIGHT - 150, arcade.color.WHITE, 50, bold = True)
+            arcade.draw_text("[ENTER] to start", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
 
-            #Draw Sanity Meter
-            sanity_ratio = self.sanity / self.sanity_initial
-            fill_width = meter_width * sanity_ratio
-            arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
-            arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
-
-        #Draw HUD
-        if self.show_hud:
-            margin = 5
-            arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
-                              margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
-            arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
-            arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 32, arcade.color.BLUE, bold=True)
-
-            arcade.draw_text(f"Gun Cooldown : {self.gun_cooldown:.1f}", meter_width+10, 8, arcade.color.WHITE, 17)
-
-        #Draw Alert bar
-        closest_dist = math.inf
-        for i, monster in enumerate(self.monster_list):
-            dist = monster.get_distance(PLAYER_POS)
-            if dist < closest_dist:
-                closest_dist = dist
-        
-        if closest_dist <= 450:
-            opacity = 1 - (closest_dist / 450)
-        else:
-            opacity = 0
+        #Draw Death Screen
+        if self.game_state == "DEAD":
+            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
+            arcade.draw_text("You Died", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
+            arcade.draw_text("[R] to restart", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
+            arcade.draw_text("[ENTER] to return to title", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-270, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
             
-        color1 = (136, 8, 8, int(255 * opacity))
-        color2 = (136, 8, 8, 0)
-        points = (0, SCREEN_HEIGHT-200), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT-200)
-        colors = (color2, color1, color1, color2)
-        rect = arcade.create_rectangle_filled_with_colors(points, colors)
-        self.shapes.append(rect)
-        self.shapes.draw()
+        #Draw Win Screen
+        if self.game_state == "WIN":
+            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
+            arcade.draw_text("You Won", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
+            arcade.draw_text("[ENTER] to return to title", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
+        
+        
+        #Draw Game
+        if self.game_state == "GAME":
+            #Draw Inventory
+            if self.inventory_open == True:
+                arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, arcade.color.BLACK)
+                arcade.draw_text("Inventory:", SCREEN_WIDTH/4, SCREEN_HEIGHT/1.5, arcade.color.WHITE, 24)
+                
+                arcade.draw_text(f"Health Restore: T1: {self.inventory_dict['health_1']}, T2: {self.inventory_dict['health_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2, arcade.color.WHITE, 24)
+                arcade.draw_text(f"Sanity Restore: T1: {self.inventory_dict['sanity_1']}, T2: {self.inventory_dict['sanity_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/2.5, arcade.color.WHITE, 24)
+                arcade.draw_text(f"Speed Restore: T1: {self.inventory_dict['speed_1']}, T2: {self.inventory_dict['speed_2']}", SCREEN_WIDTH/4, SCREEN_HEIGHT/3, arcade.color.WHITE, 24)
+                arcade.draw_text(f"Keys: {self.key_inventory}", SCREEN_WIDTH/4, SCREEN_HEIGHT/4, arcade.color.WHITE, 24)
+                
+                arcade.draw_text(f"Score: {self.score}", 10, 10, arcade.color.WHITE, 24)
+                #arcade.draw_text(f"In Radius: {enable_tracking}", 10, 50, arcade.color.WHITE, 24)
+                arcade.draw_text(f"Sanity: {self.sanity_initial}", 10, 90, arcade.color.WHITE, 24)
 
-        #Draw Generator Interact Prompt
-        for generator in self.generator_list:
-            if generator.interactable == True:
-                arcade.draw_text("Press 'E' to interact with Generator", (SCREEN_WIDTH/2)-180, (SCREEN_HEIGHT/2)-150, (255, 255, 255), 17, bold=True)
+            #Draw Debug menu
+            if self.debug == True:
+                self.show_sanity = False
+                arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
+                arcade.draw_text(f"Monster Radius: {MONSTER_RADIUS}", 10, SCREEN_HEIGHT-80, arcade.color.WHITE, 24)
+                arcade.draw_text(f"Move Speed: {self.move_speed}", 10, SCREEN_HEIGHT-110, arcade.color.WHITE, 24)
+            
+            #Draw Sanity
+            if self.show_sanity == True:
+                #Draw Sanity Meter Outline
+                meter_width = SCREEN_WIDTH / 4
+                meter_height = SCREEN_HEIGHT / 25
+                margin = 5
+                center_x = meter_width / 2 + margin
+                center_y = meter_height / 2 + margin
+                arcade.draw_rectangle_filled(center_x, center_y, meter_width, meter_height, arcade.color.BLACK)
+                arcade.draw_rectangle_outline(center_x,center_y,meter_width, meter_height, arcade.color.WHITE, border_width=3)
 
-        #Draw Fade to black
-        if self.fading_screen == True:
-            arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, self.fade_opacity))
-        if self.play_line1 == True:
-            arcade.draw_text(self.level_data["line1"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2+25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
-        if self.play_line2 == True:
-            arcade.draw_text(self.level_data["line2"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2-25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
+                #Draw Sanity Meter
+                sanity_ratio = self.sanity / self.sanity_initial
+                fill_width = meter_width * sanity_ratio
+                arcade.draw_rectangle_filled(center_x - (meter_width - fill_width) / 2, center_y, fill_width, meter_height - 4, self.sanity_color)
+                arcade.draw_text(f"Sanity: {math.ceil(self.sanity)}", center_x - meter_width / 2, center_y + meter_height / 2 + 5, arcade.color.WHITE, 12)
 
+            #Draw HUD
+            if self.show_hud:
+                margin = 5
+                arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
+                                margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
+                arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
+                arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 32, arcade.color.BLUE, bold=True)
+
+                arcade.draw_text(f"Gun Cooldown : {self.gun_cooldown:.1f}", meter_width+10, 8, arcade.color.WHITE, 17)
+
+            if self.controls:
+                arcade.draw_text(f"Hide Controls : C", SCREEN_WIDTH - 300, 8, arcade.color.WHITE, 17, bold=True)
+                arcade.draw_text(f"Movement : W, A, S, D", SCREEN_WIDTH - 300, 8+24, arcade.color.WHITE, 17)
+                arcade.draw_text(f"Interact : E", SCREEN_WIDTH - 300, 8+(24*2), arcade.color.WHITE, 17)
+                arcade.draw_text(f"Sprint : SHIFT + Movement", SCREEN_WIDTH - 300, 8+(24*3), arcade.color.WHITE, 17)
+                if self.level_data["gun_enabled"]:
+                    arcade.draw_text(f"Aim Gun : L + LRArrows", SCREEN_WIDTH - 300, 8+(24*4), arcade.color.WHITE, 17)
+                    arcade.draw_text(f"Shoot : Space", SCREEN_WIDTH - 300, 8+(24*5), arcade.color.WHITE, 17)
+
+            #Draw Alert bar
+            closest_dist = math.inf
+            for i, monster in enumerate(self.monster_list):
+                dist = monster.get_distance(self.player_sprite.position)
+                if dist < closest_dist:
+                    closest_dist = dist
+            
+            if closest_dist <= 450:
+                opacity = 1 - (closest_dist / 450)
+            else:
+                opacity = 0
+                
+            color1 = (136, 8, 8, int(255 * opacity))
+            color2 = (136, 8, 8, 0)
+            points = (0, SCREEN_HEIGHT-200), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT-200)
+            colors = (color2, color1, color1, color2)
+            rect = arcade.create_rectangle_filled_with_colors(points, colors)
+            self.shapes.append(rect)
+            self.shapes.draw()
+
+            #Draw Generator Interact Prompt
+            for generator in self.generator_list:
+                if generator.interactable == True:
+                    arcade.draw_text("Press 'E' to interact with Generator", (SCREEN_WIDTH/2)-180, (SCREEN_HEIGHT/2)-150, (255, 255, 255), 17, bold=True)
+
+            #Draw Fade to black
+            if self.fading_screen == True:
+                arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, self.fade_opacity))
+            if self.play_line1 == True:
+                arcade.draw_text(self.level_data["line1"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2+25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
+            if self.play_line2 == True:
+                arcade.draw_text(self.level_data["line2"], SCREEN_WIDTH/2, SCREEN_HEIGHT/2-25, (255, 255, 255), 22, anchor_x="center", anchor_y="center")
+            if self.dialogue_active:
+                arcade.draw_text(f"[ENTER] to skip", SCREEN_WIDTH - 200, 32, arcade.color.WHITE, 17, bold=True)
 
     def on_draw(self):
         arcade.start_render()
         self.camera_sprites.use()
         self.camera_sprites.scale = self.cam_zoom
         # Draw world into the light layer
-        with self.light_layer:
-            #arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (42, 59, 36))  
-            self.tile_list.draw()
-            self.tree_list.draw()
-            if self.killblock_list != None:
-                self.killblock_list.draw()
-            if self.sky_list != None:
-                self.sky_list.draw()
-            if self.key_list != None:
-                self.key_list.draw()
-            if self.wall_list != None:
-                self.wall_list.draw()
-            self.generator_list.draw()
-            self.monster_list.draw()
-            self.player_list.draw()
-            self.bullet_list.draw()
+        if self.game_state == "GAME":
+            with self.light_layer:
+                #arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (42, 59, 36))  
+                self.tile_list.draw()
+                self.tree_list.draw()
+                if self.killblock_list != None:
+                    self.killblock_list.draw()
+                if self.sky_list != None:
+                    self.sky_list.draw()
+                if self.key_list != None:
+                    self.key_list.draw()
+                if self.wall_list != None:
+                    self.wall_list.draw()
+                self.generator_list.draw()
+                self.monster_list.draw()
+                self.player_list.draw()
+                self.bullet_list.draw()
 
-            if self.gun_on == True:
-                x = 50 * math.sin(self.angle) + self.player_sprite.center_x
-                y = 50 * math.cos(self.angle) + self.player_sprite.center_y
-                arcade.draw_line(PLAYER_POS[0], PLAYER_POS[1], x, y, arcade.color.RED)
+                if self.gun_on == True:
+                    x = 50 * math.sin(self.angle) + self.player_sprite.center_x
+                    y = 50 * math.cos(self.angle) + self.player_sprite.center_y
+                    arcade.draw_line(PLAYER_POS[0], PLAYER_POS[1], x, y, arcade.color.RED)
 
-        # Draw the lighting effect over the world
-        self.light_layer.draw()
+            # Draw the lighting effect over the world
+            self.light_layer.draw()
 
-        # Draw UI on top
+            # Draw UI on top
         self.camera_gui.use()
         self.on_uidraw()
 
     def update(self, delta_time):
         """Movement and game logic"""
+
+        if self.game_state == "DEAD":
+            return
+
+        if self.game_state != "GAME":
+            return
+        
+        if self.level == 7:
+            self.game_state = "WIN"
+        
         self.player_list.update_animation()
         global PLAYER_POS, MONSTER_RADIUS
         PLAYER_POS = self.player_sprite.position
+
+        if self.lives <= 0:
+            self.game_state = "DEAD"
+            self.heartbeat_playing = False
+            if self.heartbeat_player:
+                self.heartbeat_player.pause()
     
         if self.wall_list != None:
             self.physics_engine.update()
@@ -695,7 +782,7 @@ class MyGame(arcade.Window):
             self.move_speed = self.walk_speed
 
         #Sanity Decrease and Effects
-        self.sanity -= 0.05 * (delta_time/2)
+        self.sanity -= self.rate_of_consumption
         if self.sanity <= 0:
             MONSTER_RADIUS = 1000
         elif self.sanity <= 20:
@@ -761,7 +848,6 @@ class MyGame(arcade.Window):
             monster.calc_radius(PLAYER_POS)        
 
         self.monster_list.update()
-
         self.damage_cooldown -= delta_time
 
         if self.damage_cooldown <= 0:
@@ -892,9 +978,29 @@ class MyGame(arcade.Window):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True    
+
+        #Title Screen Transition
+        if self.game_state == "TITLE" and key == arcade.key.ENTER:
+            self.game_state = "GAME"
+            self.load_level()
+            
+        #Death Transition
+        if self.game_state == "DEAD" and key == arcade.key.ENTER:
+            self.load_level()
+            self.game_state = "TITLE"
+        elif self.game_state == "DEAD" and key == arcade.key.R:
+            self.load_level()
+            self.game_state = "GAME"
+
+        if self.game_state == "WIN" and key == arcade.key.ENTER:
+            self.setup()
+            self.load_level()
+            self.game_state = "TITLE"
+            
+
         
         #Movement Keys (W, A, S, D)
-        elif key == arcade.key.W:
+        if key == arcade.key.W:
             self.player_sprite.change_y = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
@@ -902,7 +1008,7 @@ class MyGame(arcade.Window):
                 anim = arcade.AnimationKeyframe(i,250,texture)
                 self.player_sprite.frames.append(anim)
                 
-        elif key == arcade.key.S:
+        if key == arcade.key.S:
             self.player_sprite.change_y = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
@@ -910,7 +1016,7 @@ class MyGame(arcade.Window):
                 anim = arcade.AnimationKeyframe(i,250,texture)
                 self.player_sprite.frames.append(anim)
                 
-        elif key == arcade.key.D:
+        if key == arcade.key.D:
             self.player_sprite.change_x = self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
@@ -918,7 +1024,7 @@ class MyGame(arcade.Window):
                 anim = arcade.AnimationKeyframe(i,250,texture)
                 self.player_sprite.frames.append(anim)
                 
-        elif key == arcade.key.A:
+        if key == arcade.key.A:
             self.player_sprite.change_x = -self.move_speed
             self.player_sprite.frames.clear()
             for i in range(4):
@@ -926,11 +1032,11 @@ class MyGame(arcade.Window):
                 anim = arcade.AnimationKeyframe(i,250,texture)
                 self.player_sprite.frames.append(anim)
         
-        elif key == arcade.key.LSHIFT:
+        if key == arcade.key.LSHIFT:
             self.sprint = True
         
         #Generator Interactivity Key
-        elif key == arcade.key.E:
+        if key == arcade.key.E:
             for gen in self.generator_list:
                 if gen.interactable == True and gen.generator_activated == False:
                     gen.generator_activated = True
@@ -938,7 +1044,7 @@ class MyGame(arcade.Window):
                     gen.texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=32, y=0, width=32, height=32)
 
         #Inventory & gun Toggle
-        elif key == arcade.key.K:
+        if key == arcade.key.K:
             if self.inventory_open == False:
                 self.inventory_open = True
                 print("Inventory Open")
@@ -946,7 +1052,7 @@ class MyGame(arcade.Window):
                 self.inventory_open = False
                 print("Inventory Close")
                 
-        elif key == arcade.key.L:
+        if key == arcade.key.L:
             if self.gun_on == False:
                 self.gun_on = True
                 print("gun On")
@@ -955,7 +1061,7 @@ class MyGame(arcade.Window):
                 print("gun Off")        
         
         #Shooting
-        elif key == arcade.key.SPACE:
+        if key == arcade.key.SPACE:
             if self.level_data["gun_enabled"] == True and self.gun_cooldown <= 0:
                 texture = arcade.load_texture("data/sprites/terrain_sprite.png", x=32, y=32, width=32, height=32)
                 bullet_sprite = arcade.Sprite(texture=texture, scale=2)
@@ -973,7 +1079,17 @@ class MyGame(arcade.Window):
 
                 # Add to bullet list
                 self.bullet_list.append(bullet_sprite)
-                self.gun_cooldown = 7
+                self.gun_cooldown = self.set_gun_cooldown
+
+        #Show & Hide controls
+        if key == arcade.key.C:
+            if self.controls:
+                self.controls = False
+            elif not self.controls:
+                self.controls = True
+
+        if self.fading_screen and key == arcade.key.ENTER:
+            self.dialogue_timer += 3
 
         #Command Prompt
         elif key == arcade.key.COLON:
@@ -1028,7 +1144,7 @@ class MyGame(arcade.Window):
 def main():
     """Main Method"""
     window = MyGame()
-    window.load_level()
+    window.setup()
     arcade.run()
     
 if __name__ == "__main__":
