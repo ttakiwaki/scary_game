@@ -404,6 +404,8 @@ class MyGame(arcade.Window):
         self.key_exists = False
         global in_radius
         in_radius = False
+        self.speedrun_mode = False
+        self.current_time = 0
         
         #Integers
         self.score = 0
@@ -607,6 +609,10 @@ class MyGame(arcade.Window):
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
             arcade.draw_text("Scary Game", 100, SCREEN_HEIGHT - 150, arcade.color.WHITE, 50, bold = True)
             arcade.draw_text("[ENTER] to start", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
+            if self.speedrun_mode == True:
+                arcade.draw_text("[R] to deactivate Speedrun-Mode", 12, 12, arcade.color.GREEN, 12, bold = True)
+            else:
+                arcade.draw_text("[R] to activate Speedrun-Mode", 12, 12, arcade.color.WHITE, 12, bold = True)
 
         #Draw Death Screen
         if self.game_state == "DEAD":
@@ -624,6 +630,10 @@ class MyGame(arcade.Window):
         
         #Draw Game
         if self.game_state == "GAME":
+            #Draw Timer
+            if self.speedrun_mode == True:
+                arcade.draw_text(self.current_time - self.speedrun_start, SCREEN_WIDTH-100, SCREEN_HEIGHT-100, arcade.color.WHITE, 24)
+
             #Draw Inventory
             if self.inventory_open == True:
                 arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, arcade.color.BLACK)
@@ -767,6 +777,8 @@ class MyGame(arcade.Window):
         global PLAYER_POS, MONSTER_RADIUS
         PLAYER_POS = self.player_sprite.position
 
+        self.current_time = time.time()
+
         if self.lives <= 0:
             self.game_state = "DEAD"
             self.heartbeat_playing = False
@@ -808,8 +820,8 @@ class MyGame(arcade.Window):
                         self.wall_list.remove(door)
 
                 self.door_list = arcade.SpriteList()
-
                 self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+
         #Light Update
         self.player_light.position = (self.player_sprite.center_x,
                               self.player_sprite.center_y)
@@ -980,9 +992,18 @@ class MyGame(arcade.Window):
             self.right_pressed = True    
 
         #Title Screen Transition
+        if self.game_state == "TITLE" and key == arcade.key.ENTER and self.speedrun_mode == True:
+            self.game_state = "GAME"
+            self.load_level()
+            self.speedrun_start = time.time()
         if self.game_state == "TITLE" and key == arcade.key.ENTER:
             self.game_state = "GAME"
             self.load_level()
+        elif self.game_state == "TITLE" and key == arcade.key.R and self.speedrun_mode == True:
+            self.speedrun_mode = False
+        elif self.game_state == "TITLE" and key == arcade.key.R:
+            self.speedrun_mode = True
+        
             
         #Death Transition
         if self.game_state == "DEAD" and key == arcade.key.ENTER:
