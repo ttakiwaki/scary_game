@@ -3,7 +3,10 @@ Scary Game
 
 A top-down survival horror game built with Arcade.
 Includes monsters, generators, sanity mechanics.
+
+JSON Tutorial: https://www.youtube.com/watch?v=9N6a-VLBa2I
 """
+
 
 import random
 import arcade
@@ -25,9 +28,10 @@ levels = {
         "sanity_drain": 0.006,
         "monster_radius": 300,
         "monsters": 0,
+        "bosses": 1,
         "world_border": [288*3, 320*3],
         "spawn_point": [144*3, 16*3],
-        "monster_spawn": (10000, 10000),
+        "monster_spawn": [144*3, 16*3],
         "tree_coordinates": [(16*3, 48*3), (16*3, 176*3), (48*3, 16*3),
                              (48*3, 80*3), (48*3, 144*3), (48*3, 208*3),
                              (48*3, 272*3), (48*3, 80*3), (80*3, 80*3),
@@ -50,6 +54,7 @@ levels = {
         "sanity_drain": 0.0065,
         "monster_radius": 300,
         "monsters": 1,
+        "bosses": 0,
         "world_border": [640*3, 640*3],
         "spawn_point": [144*3, 16*3],
         "monster_spawn": (((32*17)+16)*3, ((32*19)+16)*3),
@@ -76,6 +81,7 @@ levels = {
         "sanity_drain": 0.007,
         "monster_radius": 300,
         "monsters": 2,
+        "bosses": 0,
         "world_border": [800*3, 800*3],
         "spawn_point": (((32*22)+16)*3, ((32*0)+16)*3),
         "monster_spawn": (32*3, 32*3),
@@ -102,6 +108,7 @@ levels = {
         "sanity_drain": 0.0075,
         "monster_radius": 300,
         "monsters": 2,
+        "bosses": 0,
         "world_border": [800*3, 800*3],
         "spawn_point": (((32*2)+16)*3, ((32*6)+16)*3),
         "monster_spawn": (0, 800*3),
@@ -123,6 +130,7 @@ levels = {
         "sanity_drain": 0.008,
         "monster_radius": 300,
         "monsters": 3,
+        "bosses": 0,
         "world_border": [960*3, 960*3],
         "spawn_point": (((32*14)+16)*3, ((32*0)+16)*3),
         "monster_spawn": (32*3, 32*3),
@@ -140,35 +148,27 @@ levels = {
         "map": "data/maps/map6.json",
         "sanity_drain": 0.0083,
         "monster_radius": 300,
-        "monsters": 3,
-        "world_border": [288*3, 320*3],
+        "monsters": 1,
+        "bosses": 0,
+        "world_border": [960*3, 960*3],
         "spawn_point": (((32*14)+16)*3, ((32*2)+16)*3),
-        "monster_spawn": (32*3, 32*3),
-        "tree_coordinates": [],
-        "generator_coordinates": [(((32*14)+16)*3, ((32*2)+16)*3)],
+        "monster_spawn": (((32*16)+16)*3, ((32*27)+16)*3),
+        "tree_coordinates": [(((32*0)+16)*3, ((32*10)+16)*3), (((32*0)+16)*3, ((32*18)+16)*3), (((32*0)+16)*3, ((32*24)+16)*3), (((32*1)+16)*3, ((32*5)+16)*3),
+                             (((32*1)+16)*3, ((32*14)+16)*3), (((32*1)+16)*3, ((32*28)+16)*3), (((32*2)+16)*3, ((32*21)+16)*3), (((32*4)+16)*3, ((32*3)+16)*3,), (((32*4)+16)*3, ((32*8)+16)*3),
+                              (((32*4)+16)*3, ((32*26)+16)*3), (((32*5)+16)*3, ((32*21)+16)*3), (((32*6)+16)*3, ((32*17)+16)*3), (((32*7)+16)*3, ((32*11)+16)*3),
+                               (((32*8)+16)*3, ((32*28)+16)*3), (((32*8)+16)*3, ((32*3)+16)*3), (((32*9)+16)*3, ((32*9)+16)*3),  (((32*9)+16)*3, ((32*24)+16)*3),
+                                (((32*10)+16)*3, ((32*19)+16)*3), (((32*12)+16)*3, ((32*12)+16)*3), (((32*13)+16)*3, ((32*3)+16)*3), (((32*16)+16)*3, ((32*3)+16)*3),
+                                 (((32*17)+16)*3, ((32*9)+16)*3), (((32*20)+16)*3, ((32*15)+16)*3), (((32*20)+16)*3, ((32*28)+16)*3), (((32*21)+16)*3, ((32*3)+16)*3),
+                                  (((32*22)+16)*3, ((32*10)+16)*3), (((32*23)+16)*3, ((32*23)+16)*3), (((32*24)+16)*3, ((32*28)+16)*3), (((32*24)+16)*3, ((32*3)+16)*3),
+                                   (((32*25)+16)*3, ((32*12)+16)*3), (((32*28)+16)*3, ((32*12)+16)*3), (((32*28)+16)*3, ((32*18)+16)*3), (((32*28)+16)*3, ((32*23)+16)*3),
+                                    (((32*28)+16)*3, ((32*29)+16)*3), (((32*29)+16)*3, ((32*5)+16)*3), (((32*24)+16)*3, ((32*18)+16)*3),],
+        "generator_coordinates": [(((32*16)+16)*3, ((32*27)+16)*3), (((32*14)+16)*3, ((32*2)+16)*3)],
         "required_generators": 1,
         "required_keys": 2,
         "gun_enabled": True,
         "objective": "Resume Containment Protocol",
         "line1": "Containment is just a word we tell ourselves.",
-        "line2": "Some things don’t stay buried. They just wait."
-    },
-    7: {
-        "map": "data/maps/map1.json",
-        "sanity_drain": 0.05,
-        "monster_radius": 300,
-        "monsters": 0,
-        "world_border": [288*3, 320*3],
-        "spawn_point": [144*3, 16*3],
-        "monster_spawn": (),
-        "tree_coordinates": [],
-        "generator_coordinates": [],
-        "required_generators": 0,
-        "required_keys": 0,
-        "gun_enabled": False,
-        "objective": "nil",
-        "line1": "nil",
-        "line2": "nil"
+        "line2": "The deeper you go, the darker it gets."
     }
 }
 
@@ -250,10 +250,11 @@ class Monster(arcade.Sprite):
                 self.center_x += self.change_x
                 self.center_y += self.change_y
 
-        if self.change_x > 0:
-            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=64, y=0, width=32, height=32)
-        elif self.change_x < 0:
-            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=32, y=0, width=32, height=32)
+        if self.stationary_shot == False:
+            if self.change_x > 0:
+                self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=64, y=0, width=32, height=32)
+            elif self.change_x < 0:
+                self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=32, y=0, width=32, height=32)
         
     
     def update(self):
@@ -261,6 +262,9 @@ class Monster(arcade.Sprite):
 
         if self.stationary_shot:
             self.stun_duration -= 1/60
+            self.texture = arcade.load_texture("data/sprites/monster_sprite.png", x=96, y=0, width=32, height=32)
+            self.change_x = 0
+            self.change_y = 0
             if self.stun_duration <= 0:
                 self.stationary_shot = False
                 self.stun_duration = 0
@@ -330,8 +334,6 @@ class Monster(arcade.Sprite):
         dist = math.sqrt((coor[0] - self.center_x)**2 + (coor[1] - self.center_y)**2)
         return dist
         
-class Boss_Monster(Monster):
-    pass
 
 class Generator(arcade.Sprite):
     def __init__(self, texture, scale, center_x, center_y):
@@ -367,6 +369,13 @@ class MyGame(arcade.Window):
         
         #Physics Engine
         self.physics_engine = None
+
+        #Initialize JSON File
+        try:
+            with open('speedruns.json') as f:
+                self.best_time = json.load(f)
+        except:
+            self.best_time = math.inf
         
         #Variables that will hold sprite lists.
         self.player_list = None
@@ -419,6 +428,7 @@ class MyGame(arcade.Window):
         self.key_inventory = 0
         self.gun_cooldown = 0
         self.set_gun_cooldown = 5
+        self.speedrun_score = 0
 
         #Camera
         self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -556,7 +566,6 @@ class MyGame(arcade.Window):
         """Close the Window and stop background music"""
         super().close()
 
-
     def setup(self):
         self.level = 0
                 
@@ -611,6 +620,7 @@ class MyGame(arcade.Window):
             arcade.draw_text("[ENTER] to start", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
             if self.speedrun_mode == True:
                 arcade.draw_text("[R] to deactivate Speedrun-Mode", 12, 12, arcade.color.GREEN, 12, bold = True)
+                arcade.draw_text(f"Best Time: {self.best_time:.3f}", 300, 12, arcade.color.WHITE, 12, bold = True)
             else:
                 arcade.draw_text("[R] to activate Speedrun-Mode", 12, 12, arcade.color.WHITE, 12, bold = True)
 
@@ -626,8 +636,9 @@ class MyGame(arcade.Window):
             arcade.draw_rectangle_filled(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, arcade.color.BLACK)
             arcade.draw_text("You Won", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
             arcade.draw_text("[ENTER] to return to title", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-200, arcade.color.WHITE, 25, bold = True, anchor_x = "center", anchor_y = "center")
-        
-        
+            if self.speedrun_mode == True:
+                 arcade.draw_text(f"Your Time: {self.speedrun_score:2f}", SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+170, arcade.color.WHITE, 12, bold = True, anchor_x = "center", anchor_y = "center")
+                
         #Draw Game
         if self.game_state == "GAME":
             #Draw Timer
@@ -677,10 +688,14 @@ class MyGame(arcade.Window):
                 margin = 5
                 arcade.draw_text(f"{self.level_data['objective']} : {self.generator_count}/{self.level_data['required_generators']}", 
                                 margin, SCREEN_HEIGHT-60, arcade.color.WHITE, 24, bold = True)
-                arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
-                arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 32, arcade.color.BLUE, bold=True)
-
-                arcade.draw_text(f"Gun Cooldown : {self.gun_cooldown:.1f}", meter_width+10, 8, arcade.color.WHITE, 17)
+                
+                if self.level_data["gun_enabled"] == True:
+                    arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 32, arcade.color.RED, bold=True)
+                    arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 32, arcade.color.BLUE, bold=True)
+                    arcade.draw_text(f"Gun Cooldown : {self.gun_cooldown:.1f}", meter_width+10, 8, arcade.color.WHITE, 17)
+                else:
+                    arcade.draw_text(f"Lives: {self.lives}", meter_width+10, 8, arcade.color.RED, bold=True)
+                    arcade.draw_text(f"Move Speed: {self.move_speed}", meter_width+80, 8, arcade.color.BLUE, bold=True)
 
             if self.controls:
                 arcade.draw_text(f"Hide Controls : C", SCREEN_WIDTH - 300, 8, arcade.color.WHITE, 17, bold=True)
@@ -726,6 +741,13 @@ class MyGame(arcade.Window):
             if self.dialogue_active:
                 arcade.draw_text(f"[ENTER] to skip", SCREEN_WIDTH - 200, 32, arcade.color.WHITE, 17, bold=True)
 
+
+    def clear_level(self):
+        self.wall_list.clear()
+        self.monster_list.clear()
+        self.player_list.clear()
+        self.generator_list.clear()
+
     def on_draw(self):
         arcade.start_render()
         self.camera_sprites.use()
@@ -770,8 +792,6 @@ class MyGame(arcade.Window):
         if self.game_state != "GAME":
             return
         
-        if self.level == 7:
-            self.game_state = "WIN"
         
         self.player_list.update_animation()
         global PLAYER_POS, MONSTER_RADIUS
@@ -939,7 +959,24 @@ class MyGame(arcade.Window):
 
     def level_transfer(self):
         self.level_num += 1
+
+        if self.level_num > 6 and self.speedrun_mode == True:
+            self.game_state = "WIN"
+            self.speedrun_end = time.time()
+            self.speedrun_score = self.speedrun_end - self.speedrun_start
+            if self.speedrun_score < self.best_time:
+                self.best_time = self.speedrun_score
+                self.save_to_json(self.best_time)
+            return
+        elif self.level_num > 6:
+            self.game_state = "WIN"
+            return
+        
         self.load_level()
+
+    def save_to_json(self, data):
+        with open('speedruns.json', 'w') as f:
+            json.dump(data, f)
             
     def scroll_to_player(self):
         """
@@ -1013,9 +1050,10 @@ class MyGame(arcade.Window):
             self.load_level()
             self.game_state = "GAME"
 
+        #Win Transition
         if self.game_state == "WIN" and key == arcade.key.ENTER:
-            self.setup()
-            self.load_level()
+            self.clear_level()
+            self.level_num = 1
             self.game_state = "TITLE"
             
 
